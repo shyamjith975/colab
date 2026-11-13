@@ -1,0 +1,131 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "co-lab REST API",
+    "version": "1.0.0",
+    "description": "Production REST API for co-lab — Multi-Vendor Creator Economy & Advertising Marketplace"
+  },
+  "servers": [
+    {
+      "url": "https://api.colab.io/api/v1",
+      "description": "Production Server"
+    },
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Register a new creator, business, agency, organiser or sponsor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "name": { "type": "string" },
+                  "role": { "type": "string", "enum": ["creator", "business", "agency", "organiser", "sponsor"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "User successfully created" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user & issue JWT token",
+        "responses": {
+          "200": { "description": "Session established" }
+        }
+      }
+    },
+    "/creators": {
+      "get": {
+        "summary": "List & search creators with multi-filter and sorting",
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "minFollowers", "in": "query", "schema": { "type": "integer" } },
+          { "name": "location", "in": "query", "schema": { "type": "string" } },
+          { "name": "platform", "in": "query", "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated list of creators" }
+        }
+      }
+    },
+    "/creators/{id}": {
+      "get": {
+        "summary": "Get full public creator profile, media kit, services & portfolio",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Creator profile details" } }
+      }
+    },
+    "/campaigns": {
+      "get": {
+        "summary": "Browse open brand advertising campaigns",
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "platform", "in": "query", "schema": { "type": "string" } },
+          { "name": "budgetMin", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": { "200": { "description": "Active campaigns" } }
+      },
+      "post": {
+        "summary": "Publish a new advertising campaign (Business/Brand)",
+        "responses": { "201": { "description": "Campaign created" } }
+      }
+    },
+    "/campaigns/{id}/apply": {
+      "post": {
+        "summary": "Apply to an active campaign with pitch, proposed fee & portfolio",
+        "responses": { "201": { "description": "Application submitted" } }
+      }
+    },
+    "/collaborations": {
+      "get": {
+        "summary": "List active and past collaborations for authenticated user",
+        "responses": { "200": { "description": "List of collaborations" } }
+      }
+    },
+    "/collaborations/{id}/deliverables": {
+      "post": {
+        "summary": "Submit deliverable link/asset for brand review",
+        "responses": { "200": { "description": "Deliverable updated" } }
+      }
+    },
+    "/collaborations/{id}/approve": {
+      "post": {
+        "summary": "Brand approves deliverable and triggers payout settlement",
+        "responses": { "200": { "description": "Deliverable approved" } }
+      }
+    },
+    "/payments/escrow/deposit": {
+      "post": {
+        "summary": "Deposit funds into deal escrow via UPI/Card",
+        "responses": { "200": { "description": "Escrow held" } }
+      }
+    },
+    "/sponsorships": {
+      "get": {
+        "summary": "Discover sponsorship opportunities for events, college fests, podcasts",
+        "responses": { "200": { "description": "Sponsorship opportunities" } }
+      }
+    },
+    "/admin/dashboard": {
+      "get": {
+        "summary": "Fetch platform overview metrics, GMV, disputes and commission stats",
+        "responses": { "200": { "description": "Admin overview stats" } }
+      }
+    }
+  }
+}
