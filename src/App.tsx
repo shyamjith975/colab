@@ -26,7 +26,7 @@ export const App: React.FC = () => {
   return (
     <AppProvider>
       <Router>
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
           <Navbar />
           <main className="flex-grow">
             <Routes>

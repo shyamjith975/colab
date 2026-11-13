@@ -33,10 +33,12 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const location = useLocation();
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
+  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking anywhere outside
   useEffect(() => {
@@ -53,6 +55,12 @@ export const Navbar: React.FC = () => {
       ) {
         setRoleDropdownOpen(false);
       }
+      if (
+        moreDropdownRef.current &&
+        !moreDropdownRef.current.contains(event.target as Node)
+      ) {
+        setMoreDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
@@ -67,6 +75,7 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     setProfileDropdownOpen(false);
     setRoleDropdownOpen(false);
+    setMoreDropdownOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -76,24 +85,30 @@ export const Navbar: React.FC = () => {
     badge?: string;
   }
 
-  // Guest links vs Authenticated links
-  const guestNavLinks: NavItem[] = [
+  // Core primary links (always visible on desktop nav)
+  const primaryNavLinks: NavItem[] = [
     { label: 'Discover Creators', path: '/creators' },
-    { label: 'Brand Campaigns', path: '/campaigns' },
-    { label: 'Sponsorships', path: '/sponsorships' },
-    { label: 'Pricing', path: '/pricing' }
+    { label: 'Campaigns', path: '/campaigns' },
+    { label: 'Sponsorships', path: '/sponsorships' }
   ];
 
-  const authenticatedNavLinks: NavItem[] = [
-    { label: 'Discover Creators', path: '/creators' },
-    { label: 'Brand Campaigns', path: '/campaigns' },
-    { label: 'Sponsorships', path: '/sponsorships' },
-    { label: 'UGC & Pros', path: '/ugc-pros' },
-    { label: 'Ad Spaces', path: '/ad-spaces' },
-    { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
+  // Secondary marketplace links (compact dropdown)
+  const moreNavLinks: { label: string; path: string; icon: string; desc: string; badge?: string }[] = [
+    { label: 'UGC & Creative Pros', path: '/ugc-pros', icon: '🎬', desc: 'Hire videographers, editors & photographers' },
+    { label: 'Ad Space Inventory', path: '/ad-spaces', icon: '📢', desc: 'Direct newsletter, podcast & digital slots' },
+    { label: 'AI Creator Matchmaker', path: '/ai-tools', icon: '✨', desc: 'Instant algorithmic creator matchmaking', badge: 'AI' },
+    { label: 'Pricing & Plans', path: '/pricing', icon: '💳', desc: 'Transparent creator & brand tiers' }
   ];
 
-  const navLinks: NavItem[] = isLoggedIn ? authenticatedNavLinks : guestNavLinks;
+  const mobileNavLinks: NavItem[] = [
+    { label: 'Discover Creators', path: '/creators' },
+    { label: 'Brand Campaigns', path: '/campaigns' },
+    { label: 'Sponsorships & Events', path: '/sponsorships' },
+    { label: 'UGC & Production Pros', path: '/ugc-pros' },
+    { label: 'Ad Space Inventory', path: '/ad-spaces' },
+    { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' },
+    { label: 'Pricing & Plans', path: '/pricing' }
+  ];
 
   const roles: { role: UserRole; label: string; icon: string }[] = [
     { role: 'creator', label: 'Creator View', icon: '🎨' },
@@ -196,59 +211,125 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Nav with generous padding and margins */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18 sm:h-20 whitespace-nowrap">
-          {/* Logo (Single Line) */}
-          <div className="flex items-center space-x-6 sm:space-x-8 shrink-0">
-            <Link to="/" className="flex items-center space-x-2.5 group shrink-0 pr-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
+      {/* Main Nav with clean responsive layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center justify-between h-16 sm:h-18 w-full">
+          {/* Logo & Desktop Nav Links */}
+          <div className="flex items-center space-x-4 xl:space-x-6 shrink-0">
+            <Link to="/" className="flex items-center space-x-2 group shrink-0 pr-1">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
                 <span className="text-white font-extrabold text-xl tracking-tighter">co</span>
               </div>
               <div className="flex items-center space-x-1.5 whitespace-nowrap">
-                <span className="font-extrabold text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
+                <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
                   co-lab
                 </span>
-                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md hidden sm:inline-block">
                   Marketplace
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation Links (Single Line with whitespace-nowrap) */}
+            {/* Desktop Navigation Links (Compact & Non-overflowing) */}
             <nav className="hidden lg:flex items-center space-x-1">
-              {navLinks.map((link) => (
+              {primaryNavLinks.map((link) => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-3.5 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
                     isActive(link.path)
                       ? 'text-indigo-600 bg-indigo-50/80 font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
                   <span>{link.label}</span>
-                  {link.badge && (
-                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider shadow-xs">
-                      {link.badge}
-                    </span>
-                  )}
                 </Link>
               ))}
+
+              {!isLoggedIn && (
+                <Link
+                  to="/pricing"
+                  className={`px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
+                    isActive('/pricing')
+                      ? 'text-indigo-600 bg-indigo-50/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <span>Pricing</span>
+                </Link>
+              )}
+
+              {/* More Dropdown for Authenticated features */}
+              {isLoggedIn && (
+                <div className="relative" ref={moreDropdownRef}>
+                  <button
+                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1 whitespace-nowrap shrink-0 ${
+                      moreDropdownOpen || moreNavLinks.some(l => isActive(l.path))
+                        ? 'text-indigo-600 bg-indigo-50/80 font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    }`}
+                  >
+                    <span>More</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreDropdownOpen ? 'rotate-180 text-indigo-600' : 'text-slate-400'}`} />
+                  </button>
+
+                  {moreDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40 bg-transparent"
+                        onClick={() => setMoreDropdownOpen(false)}
+                      />
+                      <div
+                        className="absolute left-0 mt-2 w-72 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-1"
+                        onClick={() => setMoreDropdownOpen(false)}
+                      >
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Commercial Marketplaces
+                        </div>
+                        {moreNavLinks.map((item) => (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            className={`flex items-start space-x-3 p-2.5 rounded-xl transition ${
+                              isActive(item.path)
+                                ? 'bg-indigo-50 text-indigo-700'
+                                : 'hover:bg-slate-50 text-slate-800'
+                            }`}
+                          >
+                            <span className="text-base p-1.5 bg-slate-100 rounded-lg shrink-0">{item.icon}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-bold text-xs truncate">{item.label}</span>
+                                {item.badge && (
+                                  <span className="bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate">{item.desc}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </nav>
           </div>
 
           {/* Search bar & Right Actions */}
-          <div className="hidden md:flex items-center space-x-3.5 shrink-0 pl-4">
-            {/* Search Input */}
-            <div className="relative w-44 lg:w-56">
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
+          <div className="hidden md:flex items-center space-x-2.5 lg:space-x-3 shrink-0">
+            {/* Search Input (Responsive width) */}
+            <div className="relative w-32 lg:w-40 xl:w-48 focus-within:w-48 xl:focus-within:w-56 transition-all duration-200">
+              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search creators, niches..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
               />
             </div>
 
@@ -259,7 +340,7 @@ export const Navbar: React.FC = () => {
                 {(currentUser.role === 'business' || currentUser.role === 'agency') && (
                   <Link
                     to="/create-campaign"
-                    className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition hover:shadow-indigo-200 shrink-0"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Post Campaign</span>
@@ -269,18 +350,18 @@ export const Navbar: React.FC = () => {
                 {/* Messages */}
                 <Link
                   to="/messages"
-                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition relative shrink-0"
+                  className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition relative shrink-0"
                   title="Deal Messages"
                 >
                   <MessageSquare className="w-4 h-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full"></span>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-600 rounded-full"></span>
                 </Link>
 
                 {/* Admin shortcut if admin */}
                 {currentUser?.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className="flex items-center space-x-1 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0"
+                    className="hidden xl:flex items-center space-x-1 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
                     <span>Admin</span>
@@ -288,7 +369,7 @@ export const Navbar: React.FC = () => {
                 )}
 
                 {/* PROFILE ICON ONLY (Clicking outside closes it immediately) */}
-                <div className="relative pl-2 border-l border-slate-200" ref={profileMenuRef}>
+                <div className="relative pl-1.5 border-l border-slate-200 shrink-0" ref={profileMenuRef}>
                   <button
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                     className="flex items-center focus:outline-none group p-0.5 rounded-full ring-2 ring-transparent hover:ring-indigo-400 transition"
@@ -298,9 +379,9 @@ export const Navbar: React.FC = () => {
                       <img
                         src={currentUser.avatar}
                         alt={currentUser.name}
-                        className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20 group-hover:ring-indigo-500 transition shadow-xs"
+                        className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/20 group-hover:ring-indigo-500 transition shadow-xs"
                       />
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 ring-2 ring-white rounded-full"></span>
+                      <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full"></span>
                     </div>
                   </button>
 
@@ -380,18 +461,18 @@ export const Navbar: React.FC = () => {
               </>
             ) : (
               /* When NOT Logged In: show clean Log In and Sign Up buttons */
-              <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
+              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
                 >
                   Log In
                 </button>
                 <button
                   onClick={() => setShowLoginModal(true)}
-                  className="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200"
+                  className="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200"
                 >
-                  <span>Join co-lab</span>
+                  <span>Join</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -440,7 +521,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            {navLinks.map((link) => (
+            {mobileNavLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}

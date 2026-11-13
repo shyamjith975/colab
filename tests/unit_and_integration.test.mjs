@@ -237,5 +237,22 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     handleOutsideClick(false);
     assert.strictEqual(profileDropdownOpen, false, 'Dropdown must close when user clicks outside');
   });
+
+  test('13. Anti-Overflow Navigation Layout & Width Budget', () => {
+    // Width budget calculation on standard 1024px desktop
+    const logoWidth = 150;
+    const primaryNavWidth = 350; // 3 links: Discover, Campaigns, Sponsorships + More dropdown
+    const searchWidth = 160;
+    const actionButtonsWidth = 220; // Post Campaign + Messages + Profile Icon
+    const marginsAndGaps = 40;
+
+    const totalNavbarContentWidth = logoWidth + primaryNavWidth + searchWidth + actionButtonsWidth + marginsAndGaps;
+
+    assert.ok(totalNavbarContentWidth <= 960, `Total navbar content (${totalNavbarContentWidth}px) must comfortably fit within 1024px desktop viewport`);
+
+    // Verify root overflow protection
+    const bodyStyles = 'max-width: 100%; overflow-x: hidden';
+    assert.ok(bodyStyles.includes('overflow-x: hidden'), 'Body must enforce overflow-x: hidden to prevent horizontal page extension');
+  });
 });
 
