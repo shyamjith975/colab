@@ -320,3 +320,4 @@ export interface PlatformSettings {
   categories: string[];
   maintenanceMode: boolean;
 }
+

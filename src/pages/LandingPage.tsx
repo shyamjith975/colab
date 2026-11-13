@@ -25,7 +25,7 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency, formatCompactNumber } from '../utils';
 
 export const LandingPage: React.FC = () => {
-  const { creators, campaigns, switchRole } = useApp();
+  const { creators, campaigns, switchRole, isLoggedIn, setShowLoginModal } = useApp();
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -303,7 +303,13 @@ export const LandingPage: React.FC = () => {
           {featuredCreators.map((creator) => (
             <div
               key={creator.id}
-              onClick={() => navigate(`/creators/${creator.id}`)}
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginModal(true);
+                } else {
+                  navigate(`/creators/${creator.id}`);
+                }
+              }}
               className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-200 cursor-pointer flex flex-col"
             >
               {/* Cover Image */}
@@ -757,3 +763,4 @@ export const LandingPage: React.FC = () => {
     </div>
   );
 };
+

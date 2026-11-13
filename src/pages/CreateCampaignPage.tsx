@@ -18,7 +18,7 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils';
 
 export const CreateCampaignPage: React.FC = () => {
-  const { createCampaign, settings, currentUser } = useApp();
+  const { createCampaign, settings, currentUser, isLoggedIn, setShowLoginModal } = useApp();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -92,6 +92,10 @@ export const CreateCampaignPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isLoggedIn || !currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     createCampaign({
       title: formData.title,
       description: formData.description,
@@ -527,12 +531,12 @@ export const CreateCampaignPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <img
-                      src={currentUser.avatar}
+                      src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                       alt=""
                       className="w-10 h-10 rounded-xl object-cover"
                     />
                     <div>
-                      <span className="text-xs font-bold text-slate-900 block">{currentUser.name}</span>
+                      <span className="text-xs font-bold text-slate-900 block">{currentUser?.name || 'Your Brand'}</span>
                       <span className="text-[10px] text-slate-500">{formData.category}</span>
                     </div>
                   </div>
@@ -616,3 +620,4 @@ export const CreateCampaignPage: React.FC = () => {
     </div>
   );
 };
+

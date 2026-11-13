@@ -22,7 +22,7 @@ import { Campaign } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 
 export const CampaignsPage: React.FC = () => {
-  const { campaigns, currentUser, applyToCampaign, settings } = useApp();
+  const { campaigns, currentUser, isLoggedIn, setShowLoginModal, applyToCampaign, settings } = useApp();
   const navigate = useNavigate();
 
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -61,6 +61,10 @@ export const CampaignsPage: React.FC = () => {
 
   const handleOpenApply = (camp: Campaign, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
     setActiveCampaign(camp);
     setProposedRate(camp.budget.minAmount);
     setPitch('');
@@ -71,13 +75,14 @@ export const CampaignsPage: React.FC = () => {
     e.preventDefault();
     if (!activeCampaign) return;
 
+    const creatorName = currentUser?.name || 'Creator';
     applyToCampaign({
       campaignId: activeCampaign.id,
       campaignTitle: activeCampaign.title,
-      creatorId: currentUser.id,
-      creatorName: currentUser.name,
-      creatorHandle: `@${currentUser.name.toLowerCase().replace(/\s+/g, '_')}`,
-      creatorAvatar: currentUser.avatar,
+      creatorId: currentUser?.id || 'guest-creator',
+      creatorName,
+      creatorHandle: `@${creatorName.toLowerCase().replace(/\s+/g, '_')}`,
+      creatorAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
       creatorCategory: activeCampaign.category,
       creatorFollowers: 45000,
       creatorRating: 4.9,
@@ -106,7 +111,7 @@ export const CampaignsPage: React.FC = () => {
             </p>
           </div>
 
-          {(currentUser.role === 'business' || currentUser.role === 'agency') && (
+          {(currentUser?.role === 'business' || currentUser?.role === 'agency') && (
             <button
               onClick={() => navigate('/create-campaign')}
               className="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm transition"
@@ -443,3 +448,4 @@ export const CampaignsPage: React.FC = () => {
     </div>
   );
 };
+

@@ -18,7 +18,7 @@ import { SponsorshipOpportunity, SponsorshipPackage } from '../types';
 import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
 
 export const SponsorshipsPage: React.FC = () => {
-  const { sponsorships, submitSponsorshipProposal, currentUser } = useApp();
+  const { sponsorships, submitSponsorshipProposal, currentUser, isLoggedIn, setShowLoginModal } = useApp();
 
   const [selectedType, setSelectedType] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +43,10 @@ export const SponsorshipsPage: React.FC = () => {
   });
 
   const handleOpenProposal = (opp: SponsorshipOpportunity, pkg: SponsorshipPackage) => {
+    if (!isLoggedIn || !currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setActiveOpportunity(opp);
     setSelectedPackage(pkg);
     setProposalNote('');
@@ -250,7 +254,7 @@ export const SponsorshipsPage: React.FC = () => {
                   <input
                     type="text"
                     required
-                    defaultValue={currentUser.name}
+                    defaultValue={currentUser?.name || ''}
                     className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                   />
                 </div>
@@ -292,3 +296,4 @@ export const SponsorshipsPage: React.FC = () => {
     </div>
   );
 };
+

@@ -32,7 +32,12 @@ import {
 } from '../data/mockData';
 
 interface AppContextType {
-  currentUser: UserProfile;
+  currentUser: UserProfile | null;
+  isLoggedIn: boolean;
+  login: (user?: UserProfile) => void;
+  logout: () => void;
+  showLoginModal: boolean;
+  setShowLoginModal: (show: boolean) => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole) => void;
   users: UserProfile[];
@@ -74,10 +79,19 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    const saved = localStorage.getItem('colab_is_logged_in');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    const savedLogin = localStorage.getItem('colab_is_logged_in');
+    if (savedLogin === 'false') return null;
     const saved = localStorage.getItem('colab_current_user');
     return saved ? JSON.parse(saved) : DEMO_USERS[0];
   });
+
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   const [users, setUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('colab_users');
@@ -277,10 +291,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [messages]);
 
   // Actions
+  const login = (user?: UserProfile) => {
+    const target = user || users[0] || DEMO_USERS[0];
+    setCurrentUser(target);
+    setIsLoggedIn(true);
+    localStorage.setItem('colab_is_logged_in', 'true');
+    localStorage.setItem('colab_current_user', JSON.stringify(target));
+    setShowLoginModal(false);
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+    localStorage.setItem('colab_is_logged_in', 'false');
+    localStorage.removeItem('colab_current_user');
+  };
+
   const switchUser = (userId: string) => {
     const target = users.find(u => u.id === userId);
     if (target) {
       setCurrentUser(target);
+      setIsLoggedIn(true);
+      localStorage.setItem('colab_is_logged_in', 'true');
+      localStorage.setItem('colab_current_user', JSON.stringify(target));
     }
   };
 
@@ -288,6 +321,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const matched = users.find(u => u.role === role);
     if (matched) {
       setCurrentUser(matched);
+      setIsLoggedIn(true);
+      localStorage.setItem('colab_is_logged_in', 'true');
+      localStorage.setItem('colab_current_user', JSON.stringify(matched));
     } else {
       const newUser: UserProfile = {
         id: `user-${role}-test`,
@@ -300,17 +336,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setUsers(prev => [...prev, newUser]);
       setCurrentUser(newUser);
+      setIsLoggedIn(true);
+      localStorage.setItem('colab_is_logged_in', 'true');
+      localStorage.setItem('colab_current_user', JSON.stringify(newUser));
     }
   };
 
   const createCampaign = (campaignData: Omit<Campaign, 'id' | 'businessId' | 'businessName' | 'businessLogo' | 'businessVerified' | 'applicantsCount' | 'shortlistedCount' | 'createdAt'>): Campaign => {
+    const activeUser = currentUser || users[2] || DEMO_USERS[2];
     const newCampaign: Campaign = {
       ...campaignData,
       id: `camp-${Date.now()}`,
-      businessId: currentUser.id,
-      businessName: currentUser.name,
-      businessLogo: currentUser.avatar,
-      businessVerified: currentUser.verified,
+      businessId: activeUser.id,
+      businessName: activeUser.name,
+      businessLogo: activeUser.avatar,
+      businessVerified: activeUser.verified,
       applicantsCount: 0,
       shortlistedCount: 0,
       createdAt: new Date().toISOString(),
@@ -347,13 +387,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fee = Math.round(agreedAmount * (settings.platformCommissionPercent / 100));
     const payout = agreedAmount - fee;
 
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
     const newCollab: Collaboration = {
       id: `collab-${Date.now()}`,
       campaignId: app.campaignId,
       campaignTitle: app.campaignTitle,
-      businessId: campaign ? campaign.businessId : currentUser.id,
-      businessName: campaign ? campaign.businessName : currentUser.name,
-      businessAvatar: campaign ? campaign.businessLogo : currentUser.avatar,
+      businessId: campaign ? campaign.businessId : activeUser.id,
+      businessName: campaign ? campaign.businessName : activeUser.name,
+      businessAvatar: campaign ? campaign.businessLogo : activeUser.avatar,
       creatorId: app.creatorId,
       creatorName: app.creatorName,
       creatorAvatar: app.creatorAvatar,
@@ -523,12 +564,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendMessage = (conversationId: string, text: string, attachmentUrl?: string) => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
       conversationId,
-      senderId: currentUser.id,
-      senderName: currentUser.name,
-      senderRole: currentUser.role,
+      senderId: activeUser.id,
+      senderName: activeUser.name,
+      senderRole: activeUser.role,
       text,
       attachmentUrl,
       timestamp: new Date().toISOString(),
@@ -547,8 +589,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createOrGetConversation = (targetUserId: string, collaborationId?: string): string => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
     const existing = conversations.find(c =>
-      c.participantIds.includes(currentUser.id) && c.participantIds.includes(targetUserId)
+      c.participantIds.includes(activeUser.id) && c.participantIds.includes(targetUserId)
     );
     if (existing) return existing.id;
 
@@ -562,17 +605,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newConv: Conversation = {
       id: `conv-${Date.now()}`,
-      participantIds: [currentUser.id, targetUserId],
+      participantIds: [activeUser.id, targetUserId],
       participantNames: {
-        [currentUser.id]: currentUser.name,
+        [activeUser.id]: activeUser.name,
         [targetUserId]: targetName
       },
       participantAvatars: {
-        [currentUser.id]: currentUser.avatar,
+        [activeUser.id]: activeUser.avatar,
         [targetUserId]: targetAvatar
       },
       participantRoles: {
-        [currentUser.id]: currentUser.role,
+        [activeUser.id]: activeUser.role,
         [targetUserId]: targetRole
       },
       unreadCount: 0,
@@ -629,6 +672,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         currentUser,
+        isLoggedIn,
+        login,
+        logout,
+        showLoginModal,
+        setShowLoginModal,
         switchUser,
         switchRole,
         users,
@@ -675,3 +723,4 @@ export const useApp = () => {
   if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
 };
+

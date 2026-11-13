@@ -26,6 +26,8 @@ export const CollaborationDealRoomPage: React.FC = () => {
   const {
     collaborations,
     currentUser,
+    isLoggedIn,
+    setShowLoginModal,
     updateCollaborationDeliverable,
     requestDeliverableRevision,
     approveDeliverable,
@@ -54,6 +56,24 @@ export const CollaborationDealRoomPage: React.FC = () => {
   const [compRating, setCompRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
 
+  if (!isLoggedIn || !currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-20 text-center">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <ShieldCheck className="w-12 h-12 text-indigo-600 mx-auto" />
+          <h2 className="text-xl font-bold text-slate-800">Authentication Required</h2>
+          <p className="text-xs text-slate-500">Please sign in to access this collaboration Deal Room and escrow contracts.</p>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition shadow-sm"
+          >
+            Sign In Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!collab) {
     return (
       <div className="min-h-screen bg-slate-50 py-20 text-center">
@@ -68,8 +88,8 @@ export const CollaborationDealRoomPage: React.FC = () => {
     );
   }
 
-  const isBrand = currentUser.role === 'business' || currentUser.role === 'agency' || currentUser.id === collab.businessId;
-  const isCreator = currentUser.role === 'creator' || currentUser.id === collab.creatorId;
+  const isBrand = currentUser?.role === 'business' || currentUser?.role === 'agency' || currentUser?.id === collab.businessId;
+  const isCreator = currentUser?.role === 'creator' || currentUser?.id === collab.creatorId;
 
   const handleOpenSubmit = (delId: string) => {
     setSelectedDeliverableId(delId);
@@ -569,3 +589,4 @@ export const CollaborationDealRoomPage: React.FC = () => {
     </div>
   );
 };
+

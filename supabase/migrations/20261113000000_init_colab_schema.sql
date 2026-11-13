@@ -359,3 +359,4 @@ CREATE INDEX idx_creator_rating ON creator_profiles(rating DESC);
 CREATE INDEX idx_collab_creator ON collaborations(creator_id);
 CREATE INDEX idx_collab_business ON collaborations(business_id);
 CREATE INDEX idx_transactions_status ON transactions(status);
+

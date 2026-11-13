@@ -13,7 +13,7 @@ import { useApp } from '../context/AppContext';
 import { formatRelativeTime } from '../utils';
 
 export const MessagesPage: React.FC = () => {
-  const { conversations, messages, sendMessage, currentUser } = useApp();
+  const { conversations, messages, sendMessage, currentUser, isLoggedIn, setShowLoginModal } = useApp();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -32,6 +32,24 @@ export const MessagesPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedConvId]);
 
+  if (!isLoggedIn || !currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-20 text-center">
+        <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <MessageSquare className="w-12 h-12 text-indigo-600 mx-auto" />
+          <h2 className="text-xl font-bold text-slate-800">Please Sign In</h2>
+          <p className="text-xs text-slate-500">Sign in to access your direct messages and collaboration deal discussions.</p>
+          <button
+            onClick={() => setShowLoginModal(true)}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition shadow-sm"
+          >
+            Sign In Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const activeConv = conversations.find((c) => c.id === selectedConvId);
 
   // Filter messages for active conversation
@@ -46,7 +64,7 @@ export const MessagesPage: React.FC = () => {
 
   const getOtherParticipantId = (conv: typeof activeConv) => {
     if (!conv) return '';
-    return conv.participantIds.find((id) => id !== currentUser.id) || conv.participantIds[0];
+    return conv.participantIds.find((id) => id !== currentUser?.id) || conv.participantIds[0];
   };
 
   return (
@@ -143,7 +161,7 @@ export const MessagesPage: React.FC = () => {
               {/* Messages Body */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/30">
                 {convMessages.map((msg) => {
-                  const isMine = msg.senderId === currentUser.id;
+                  const isMine = msg.senderId === currentUser?.id;
 
                   return (
                     <div
@@ -197,3 +215,4 @@ export const MessagesPage: React.FC = () => {
     </div>
   );
 };
+

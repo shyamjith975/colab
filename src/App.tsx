@@ -4,6 +4,7 @@ import { AppProvider } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Footer } from './components/layout/Footer';
+import { LoginModal } from './components/auth/LoginModal';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -45,6 +46,7 @@ export const App: React.FC = () => {
           </main>
           <Footer />
           <MobileBottomNav />
+          <LoginModal />
         </div>
       </Router>
     </AppProvider>
@@ -52,3 +54,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

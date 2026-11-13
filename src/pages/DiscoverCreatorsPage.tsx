@@ -19,9 +19,18 @@ import { CreatorProfile } from '../types';
 import { formatCurrency, formatCompactNumber } from '../utils';
 
 export const DiscoverCreatorsPage: React.FC = () => {
-  const { creators, settings } = useApp();
+  const { creators, settings, isLoggedIn, setShowLoginModal } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const handleViewProfile = (creatorId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+    } else {
+      navigate(`/creators/${creatorId}`);
+    }
+  };
 
   // Filters state
   const initialCategory = searchParams.get('category') || 'All';
@@ -240,7 +249,7 @@ export const DiscoverCreatorsPage: React.FC = () => {
               return (
                 <div
                   key={creator.id}
-                  onClick={() => navigate(`/creators/${creator.id}`)}
+                  onClick={() => handleViewProfile(creator.id)}
                   className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-200 cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
@@ -339,7 +348,10 @@ export const DiscoverCreatorsPage: React.FC = () => {
                         {formatCurrency(creator.minPrice)}
                       </span>
                     </div>
-                    <button className="text-xs font-bold bg-indigo-600 group-hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition shadow-xs">
+                    <button
+                      onClick={(e) => handleViewProfile(creator.id, e)}
+                      className="text-xs font-bold bg-indigo-600 group-hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition shadow-xs"
+                    >
                       View Profile
                     </button>
                   </div>
@@ -436,7 +448,7 @@ export const DiscoverCreatorsPage: React.FC = () => {
                     <button
                       onClick={() => {
                         setShowCompareModal(false);
-                        navigate(`/creators/${c.id}`);
+                        handleViewProfile(c.id);
                       }}
                       className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition"
                     >

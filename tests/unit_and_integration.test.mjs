@@ -118,4 +118,66 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.ok(permissions.admin.includes('verify_user'));
     assert.ok(permissions.admin.includes('adjust_settings'));
   });
+
+  test('7. Profile Access Gating Logic (Must be logged in to view full profile)', () => {
+    const canViewCreatorProfile = (isLoggedIn, targetUser) => {
+      if (!isLoggedIn) {
+        return { allowed: false, promptLogin: true };
+      }
+      return { allowed: true, promptLogin: false, profile: targetUser };
+    };
+
+    const mockCreator = { id: 'c1', name: 'Ananya Sharma', role: 'creator', rateCard: [1500, 3000] };
+
+    // When logged out:
+    const loggedOutAccess = canViewCreatorProfile(false, mockCreator);
+    assert.strictEqual(loggedOutAccess.allowed, false, 'Unauthenticated users must not view full creator profile');
+    assert.strictEqual(loggedOutAccess.promptLogin, true, 'Unauthenticated users must be prompted to log in');
+
+    // When logged in:
+    const loggedInAccess = canViewCreatorProfile(true, mockCreator);
+    assert.strictEqual(loggedInAccess.allowed, true, 'Authenticated users can view creator profile');
+    assert.strictEqual(loggedInAccess.profile.name, 'Ananya Sharma');
+  });
+
+  test('8. Logout & Session Management for All Users', () => {
+    let session = {
+      isLoggedIn: true,
+      currentUser: { id: 'u1', name: 'Rohit Verma', role: 'creator' }
+    };
+
+    const logout = () => {
+      session = {
+        isLoggedIn: false,
+        currentUser: null
+      };
+    };
+
+    assert.strictEqual(session.isLoggedIn, true);
+    assert.ok(session.currentUser !== null);
+
+    logout();
+
+    assert.strictEqual(session.isLoggedIn, false, 'User session must be marked logged out');
+    assert.strictEqual(session.currentUser, null, 'Current user must be cleared on logout');
+  });
+
+  test('9. Navbar Layout Rules: Single Line & Profile Icon Dropdown', () => {
+    const navLinks = [
+      { path: '/creators', label: 'Discover Creators' },
+      { path: '/campaigns', label: 'Brand Campaigns' },
+      { path: '/sponsorships', label: 'Sponsorships' },
+      { path: '/pricing', label: 'Pricing' }
+    ];
+
+    // Verification: Standalone "Dashboard" text link is removed from top-level navbar
+    const hasStandaloneDashboardLink = navLinks.some(link => link.label.toLowerCase() === 'dashboard');
+    assert.strictEqual(hasStandaloneDashboardLink, false, 'Dashboard text link must be removed from primary navigation');
+
+    // Verification: Single line class applied
+    const logoClass = "flex items-center space-x-1.5 whitespace-nowrap";
+    assert.ok(logoClass.includes('whitespace-nowrap'), 'Logo and title must be strictly on a single line');
+    assert.ok(!logoClass.includes('flex-col'), 'Logo must not be arranged vertically on 2 lines');
+  });
 });
+

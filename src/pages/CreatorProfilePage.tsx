@@ -15,7 +15,9 @@ import {
   Sparkles,
   ArrowLeft,
   X,
-  Plus
+  Plus,
+  Lock,
+  LogIn
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
@@ -23,7 +25,16 @@ import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
 export const CreatorProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { creators, reviews, currentUser, createOrGetConversation, campaigns, applyToCampaign } = useApp();
+  const {
+    creators,
+    reviews,
+    currentUser,
+    isLoggedIn,
+    setShowLoginModal,
+    createOrGetConversation,
+    campaigns,
+    applyToCampaign
+  } = useApp();
 
   const creator = creators.find((c) => c.id === id);
 
@@ -43,6 +54,56 @@ export const CreatorProfilePage: React.FC = () => {
         >
           Back to Creators
         </button>
+      </div>
+    );
+  }
+
+  // Profile is gated: view profile only after logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-16 px-4 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 p-8 text-center shadow-xl space-y-6">
+          <div className="relative mx-auto w-24 h-24">
+            <img
+              src={creator.avatar}
+              alt={creator.name}
+              className="w-24 h-24 rounded-3xl object-cover ring-4 ring-indigo-50 blur-[2px]"
+            />
+            <div className="absolute inset-0 bg-slate-900/40 rounded-3xl flex items-center justify-center text-white">
+              <Lock className="w-8 h-8 text-amber-400" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center space-x-1.5 bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Login Required</span>
+            </div>
+            <h2 className="text-xl font-extrabold text-slate-900">
+              View Profile Only After Login
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Sign in to view <span className="font-bold text-slate-700">{creator.name}</span> ({creator.handle})'s full media kit, verified audience demographics, rate cards, and direct collaboration options.
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Log In to View Profile</span>
+            </button>
+
+            <button
+              onClick={() => navigate('/creators')}
+              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition"
+            >
+              Back to Creators Directory
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -75,7 +136,7 @@ export const CreatorProfilePage: React.FC = () => {
         creatorRating: creator.rating,
         proposedRate: selectedService ? selectedService.price : creator.minPrice,
         deliveryDays: selectedService ? selectedService.deliveryDays : 5,
-        pitch: `Direct Brand Invitation from ${currentUser.name}: ${customProposalText || 'We would love to collaborate with you on this campaign!'}`,
+        pitch: `Direct Brand Invitation from ${currentUser?.name || 'Brand Partner'}: ${customProposalText || 'We would love to collaborate with you on this campaign!'}`,
         portfolioLinks: []
       });
       alert(`Invitation sent to ${creator.name} for campaign "${camp.title}"!`);
@@ -513,3 +574,4 @@ export const CreatorProfilePage: React.FC = () => {
     </div>
   );
 };
+
