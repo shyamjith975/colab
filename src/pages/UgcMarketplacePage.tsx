@@ -18,7 +18,7 @@ import { CreativeProfessional } from '../types';
 import { formatCurrency } from '../utils';
 
 export const UgcMarketplacePage: React.FC = () => {
-  const { creativeProfessionals, createOrGetConversation } = useApp();
+  const { creativeProfessionals, createOrGetConversation, isLoggedIn, setShowLoginModal } = useApp();
   const [selectedRole, setSelectedRole] = useState('All');
   const [activeProfessional, setActiveProfessional] = useState<CreativeProfessional | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -38,6 +38,10 @@ export const UgcMarketplacePage: React.FC = () => {
   });
 
   const handleOpenOrder = (prof: CreativeProfessional) => {
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
     setActiveProfessional(prof);
     setOrderBrief('');
     setShowOrderModal(true);
@@ -50,10 +54,10 @@ export const UgcMarketplacePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/60 pt-6 pb-20 sm:pt-8 sm:pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <div className="inline-flex items-center space-x-1.5 bg-purple-100 text-purple-900 text-xs font-bold px-2.5 py-0.5 rounded-full mb-2">
             <Sparkles className="w-3.5 h-3.5 text-purple-600" />
             <span>Independent Creative Talent</span>

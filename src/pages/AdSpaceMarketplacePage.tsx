@@ -14,12 +14,16 @@ import { AdInventoryItem } from '../types';
 import { formatCurrency, formatCompactNumber } from '../utils';
 
 export const AdSpaceMarketplacePage: React.FC = () => {
-  const { adInventory, bookAdInventory } = useApp();
+  const { adInventory, bookAdInventory, isLoggedIn, setShowLoginModal } = useApp();
   const [selectedItem, setSelectedItem] = useState<AdInventoryItem | null>(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [showBookingModal, setShowBookingModal] = useState(false);
 
   const handleOpenBooking = (item: AdInventoryItem) => {
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
     setSelectedItem(item);
     setSelectedDate(item.datesAvailable[0] || '');
     setShowBookingModal(true);
@@ -34,10 +38,10 @@ export const AdSpaceMarketplacePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/60 pt-6 pb-20 sm:pt-8 sm:pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <div className="inline-flex items-center space-x-1.5 bg-blue-100 text-blue-900 text-xs font-bold px-2.5 py-0.5 rounded-full mb-2">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
             <span>Guaranteed Inventory Slots</span>

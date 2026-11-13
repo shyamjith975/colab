@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -37,6 +37,10 @@ export const CreatorProfilePage: React.FC = () => {
   } = useApp();
 
   const creator = creators.find((c) => c.id === id);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [id]);
 
   const [activeTab, setActiveTab] = useState<'services' | 'portfolio' | 'demographics' | 'reviews'>('services');
   const [showInviteModal, setShowInviteModal] = useState(false);

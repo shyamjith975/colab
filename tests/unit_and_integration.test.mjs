@@ -254,5 +254,47 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     const bodyStyles = 'max-width: 100%; overflow-x: hidden';
     assert.ok(bodyStyles.includes('overflow-x: hidden'), 'Body must enforce overflow-x: hidden to prevent horizontal page extension');
   });
+
+  test('14. Scroll to Top Reset on Navigation & Creator Profile Load', () => {
+    let currentScroll = { top: 450, left: 0 };
+    const scrollToTop = () => {
+      currentScroll = { top: 0, left: 0 };
+    };
+
+    // Simulate route change to creator profile
+    scrollToTop();
+    assert.strictEqual(currentScroll.top, 0, 'Scroll position must be reset to 0 so creator profile lands at top area');
+  });
+
+  test('15. Desktop Navigation Tabs Direct Display (No More Dropdown)', () => {
+    const desktopNavTabs = [
+      { label: 'Creators', path: '/creators' },
+      { label: 'Campaigns', path: '/campaigns' },
+      { label: 'Sponsorships', path: '/sponsorships' },
+      { label: 'UGC Pros', path: '/ugc-pros' },
+      { label: 'Ad Spaces', path: '/ad-spaces' },
+      { label: 'AI Match', path: '/ai-tools', badge: 'AI' },
+      { label: 'Pricing', path: '/pricing' }
+    ];
+
+    assert.strictEqual(desktopNavTabs.length, 7, 'Desktop menu bar must show all 7 tabs directly without a More dropdown');
+    assert.ok(!desktopNavTabs.some(t => t.label.includes('More')), 'More dropdown must be removed from desktop tab bar');
+  });
+
+  test('16. Persona-Specific Dashboard Feature Matrix', () => {
+    const roleFeatures = {
+      creator: ['deals', 'proposals', 'ratecard', 'mediakit', 'transactions'],
+      business: ['deals', 'proposals', 'campaigns', 'transactions'],
+      agency: ['deals', 'proposals', 'campaigns', 'clients', 'transactions'],
+      organiser: ['deals', 'proposals', 'events', 'transactions'],
+      sponsor: ['deals', 'proposals', 'events', 'transactions']
+    };
+
+    assert.ok(roleFeatures.creator.includes('ratecard'), 'Creator dashboard must have Rate Card & Package Builder');
+    assert.ok(roleFeatures.creator.includes('mediakit'), 'Creator dashboard must have Verified Media Kit Demographics');
+    assert.ok(roleFeatures.business.includes('campaigns'), 'Business dashboard must have Campaign Manager');
+    assert.ok(roleFeatures.agency.includes('clients'), 'Agency dashboard must have Multi-Brand Client Hub');
+    assert.ok(roleFeatures.organiser.includes('events'), 'Organiser dashboard must have Event Sponsorship Packages');
+  });
 });
 

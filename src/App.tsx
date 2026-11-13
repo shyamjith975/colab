@@ -1,10 +1,21 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Footer } from './components/layout/Footer';
 import { LoginModal } from './components/auth/LoginModal';
+
+// Universal Scroll to Top on page change
+const ScrollToTop: React.FC = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+
+  return null;
+};
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -26,6 +37,7 @@ export const App: React.FC = () => {
   return (
     <AppProvider>
       <Router>
+        <ScrollToTop />
         <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
           <Navbar />
           <main className="flex-grow">

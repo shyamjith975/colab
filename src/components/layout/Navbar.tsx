@@ -33,12 +33,10 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const location = useLocation();
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
-  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking anywhere outside
   useEffect(() => {
@@ -55,12 +53,6 @@ export const Navbar: React.FC = () => {
       ) {
         setRoleDropdownOpen(false);
       }
-      if (
-        moreDropdownRef.current &&
-        !moreDropdownRef.current.contains(event.target as Node)
-      ) {
-        setMoreDropdownOpen(false);
-      }
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
@@ -75,7 +67,6 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     setProfileDropdownOpen(false);
     setRoleDropdownOpen(false);
-    setMoreDropdownOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -83,31 +74,29 @@ export const Navbar: React.FC = () => {
     label: string;
     path: string;
     badge?: string;
+    icon?: string;
   }
 
-  // Core primary links (always visible on desktop nav)
-  const primaryNavLinks: NavItem[] = [
-    { label: 'Discover Creators', path: '/creators' },
+  // All desktop navigation tabs (displayed directly without "More")
+  const desktopNavTabs: NavItem[] = [
+    { label: 'Creators', path: '/creators' },
     { label: 'Campaigns', path: '/campaigns' },
-    { label: 'Sponsorships', path: '/sponsorships' }
+    { label: 'Sponsorships', path: '/sponsorships' },
+    { label: 'UGC Pros', path: '/ugc-pros' },
+    { label: 'Ad Spaces', path: '/ad-spaces' },
+    { label: 'AI Match', path: '/ai-tools', badge: 'AI' },
+    { label: 'Pricing', path: '/pricing' }
   ];
 
-  // Secondary marketplace links (compact dropdown)
-  const moreNavLinks: { label: string; path: string; icon: string; desc: string; badge?: string }[] = [
-    { label: 'UGC & Creative Pros', path: '/ugc-pros', icon: '🎬', desc: 'Hire videographers, editors & photographers' },
-    { label: 'Ad Space Inventory', path: '/ad-spaces', icon: '📢', desc: 'Direct newsletter, podcast & digital slots' },
-    { label: 'AI Creator Matchmaker', path: '/ai-tools', icon: '✨', desc: 'Instant algorithmic creator matchmaking', badge: 'AI' },
-    { label: 'Pricing & Plans', path: '/pricing', icon: '💳', desc: 'Transparent creator & brand tiers' }
-  ];
-
+  // Full options specifically for mobile view
   const mobileNavLinks: NavItem[] = [
-    { label: 'Discover Creators', path: '/creators' },
-    { label: 'Brand Campaigns', path: '/campaigns' },
-    { label: 'Sponsorships & Events', path: '/sponsorships' },
-    { label: 'UGC & Production Pros', path: '/ugc-pros' },
-    { label: 'Ad Space Inventory', path: '/ad-spaces' },
-    { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' },
-    { label: 'Pricing & Plans', path: '/pricing' }
+    { label: 'Discover Creators', path: '/creators', icon: '🎨' },
+    { label: 'Brand Campaigns', path: '/campaigns', icon: '📢' },
+    { label: 'Sponsorships & Events', path: '/sponsorships', icon: '🎪' },
+    { label: 'UGC & Creative Pros', path: '/ugc-pros', icon: '🎬' },
+    { label: 'Ad Space Inventory', path: '/ad-spaces', icon: '📰' },
+    { label: 'AI Creator Matchmaker', path: '/ai-tools', icon: '✨', badge: 'AI' },
+    { label: 'Pricing & Plans', path: '/pricing', icon: '💳' }
   ];
 
   const roles: { role: UserRole; label: string; icon: string }[] = [
@@ -230,99 +219,33 @@ export const Navbar: React.FC = () => {
               </div>
             </Link>
 
-            {/* Desktop Navigation Links (Compact & Non-overflowing) */}
-            <nav className="hidden lg:flex items-center space-x-1">
-              {primaryNavLinks.map((link) => (
+            {/* Desktop Navigation Links (All tabs directly visible on tab bar) */}
+            <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
+              {desktopNavTabs.map((tab) => (
                 <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
-                    isActive(link.path)
-                      ? 'text-indigo-600 bg-indigo-50/80 font-bold'
+                  key={tab.path}
+                  to={tab.path}
+                  className={`px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold transition flex items-center space-x-1 whitespace-nowrap shrink-0 ${
+                    isActive(tab.path)
+                      ? 'text-indigo-600 bg-indigo-50/90 font-bold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
-                  <span>{link.label}</span>
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                      {tab.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
-
-              {!isLoggedIn && (
-                <Link
-                  to="/pricing"
-                  className={`px-3 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
-                    isActive('/pricing')
-                      ? 'text-indigo-600 bg-indigo-50/80 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
-                >
-                  <span>Pricing</span>
-                </Link>
-              )}
-
-              {/* More Dropdown for Authenticated features */}
-              {isLoggedIn && (
-                <div className="relative" ref={moreDropdownRef}>
-                  <button
-                    onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs xl:text-sm font-medium transition flex items-center space-x-1 whitespace-nowrap shrink-0 ${
-                      moreDropdownOpen || moreNavLinks.some(l => isActive(l.path))
-                        ? 'text-indigo-600 bg-indigo-50/80 font-bold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                    }`}
-                  >
-                    <span>More</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreDropdownOpen ? 'rotate-180 text-indigo-600' : 'text-slate-400'}`} />
-                  </button>
-
-                  {moreDropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40 bg-transparent"
-                        onClick={() => setMoreDropdownOpen(false)}
-                      />
-                      <div
-                        className="absolute left-0 mt-2 w-72 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95 duration-100 space-y-1"
-                        onClick={() => setMoreDropdownOpen(false)}
-                      >
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Commercial Marketplaces
-                        </div>
-                        {moreNavLinks.map((item) => (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            className={`flex items-start space-x-3 p-2.5 rounded-xl transition ${
-                              isActive(item.path)
-                                ? 'bg-indigo-50 text-indigo-700'
-                                : 'hover:bg-slate-50 text-slate-800'
-                            }`}
-                          >
-                            <span className="text-base p-1.5 bg-slate-100 rounded-lg shrink-0">{item.icon}</span>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center space-x-1.5">
-                                <span className="font-bold text-xs truncate">{item.label}</span>
-                                {item.badge && (
-                                  <span className="bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase">
-                                    {item.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-slate-500 truncate">{item.desc}</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
             </nav>
           </div>
 
           {/* Search bar & Right Actions */}
           <div className="hidden md:flex items-center space-x-2.5 lg:space-x-3 shrink-0">
             {/* Search Input (Responsive width) */}
-            <div className="relative w-32 lg:w-40 xl:w-48 focus-within:w-48 xl:focus-within:w-56 transition-all duration-200">
+            <div className="relative w-28 lg:w-36 xl:w-44 focus-within:w-48 transition-all duration-200">
               <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
@@ -533,7 +456,10 @@ export const Navbar: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span>{link.label}</span>
+                  <span className="flex items-center space-x-2.5">
+                    {link.icon && <span className="text-base">{link.icon}</span>}
+                    <span>{link.label}</span>
+                  </span>
                   {link.badge && (
                     <span className="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                       {link.badge}
