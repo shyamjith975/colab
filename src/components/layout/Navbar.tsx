@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Search,
@@ -10,7 +10,9 @@ import {
   ChevronDown,
   UserCheck,
   LogOut,
-  LogIn
+  LogIn,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
@@ -33,7 +35,56 @@ export const Navbar: React.FC = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const location = useLocation();
 
-  const navLinks = [
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const roleDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking anywhere outside
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setProfileDropdownOpen(false);
+      }
+      if (
+        roleDropdownRef.current &&
+        !roleDropdownRef.current.contains(event.target as Node)
+      ) {
+        setRoleDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, []);
+
+  // Close menus when changing routes
+  useEffect(() => {
+    setProfileDropdownOpen(false);
+    setRoleDropdownOpen(false);
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  interface NavItem {
+    label: string;
+    path: string;
+    badge?: string;
+  }
+
+  // Guest links vs Authenticated links
+  const guestNavLinks: NavItem[] = [
+    { label: 'Discover Creators', path: '/creators' },
+    { label: 'Brand Campaigns', path: '/campaigns' },
+    { label: 'Sponsorships', path: '/sponsorships' },
+    { label: 'Pricing', path: '/pricing' }
+  ];
+
+  const authenticatedNavLinks: NavItem[] = [
     { label: 'Discover Creators', path: '/creators' },
     { label: 'Brand Campaigns', path: '/campaigns' },
     { label: 'Sponsorships', path: '/sponsorships' },
@@ -41,6 +92,8 @@ export const Navbar: React.FC = () => {
     { label: 'Ad Spaces', path: '/ad-spaces' },
     { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
   ];
+
+  const navLinks: NavItem[] = isLoggedIn ? authenticatedNavLinks : guestNavLinks;
 
   const roles: { role: UserRole; label: string; icon: string }[] = [
     { role: 'creator', label: 'Creator View', icon: '🎨' },
@@ -54,15 +107,15 @@ export const Navbar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white text-xs py-1.5 px-4">
+      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white text-xs py-2 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+          <div className="flex items-center space-x-2.5">
+            <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               {isLoggedIn ? 'Demo Mode' : 'Guest Mode'}
             </span>
-            <span className="hidden sm:inline text-slate-200">
+            <span className="hidden sm:inline text-slate-200 text-xs">
               {isLoggedIn
                 ? 'Switch roles instantly to preview Creator, Brand, Deal Room, or Admin operations.'
                 : 'Browse as Guest • Log in to view full creator media kits, rate cards, and collaborate.'}
@@ -71,10 +124,10 @@ export const Navbar: React.FC = () => {
 
           {/* Quick Role Switcher Pill or Login CTA */}
           {isLoggedIn && currentUser ? (
-            <div className="relative">
+            <div className="relative" ref={roleDropdownRef}>
               <button
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 text-white px-2.5 py-0.5 rounded-full text-xs transition font-medium border border-white/20"
+                className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs transition font-medium border border-white/20"
               >
                 <span>Acting as:</span>
                 <span className="font-bold text-amber-300 capitalize">{currentUser.role}</span>
@@ -83,74 +136,80 @@ export const Navbar: React.FC = () => {
               </button>
 
               {roleDropdownOpen && (
-                <div
-                  className="absolute right-0 mt-1 w-64 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
-                  onClick={() => setRoleDropdownOpen(false)}
-                >
-                  <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-100">
-                    Switch Active Role
-                  </div>
-                  {roles.map((r) => (
-                    <button
-                      key={r.role}
-                      onClick={() => switchRole(r.role)}
-                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-indigo-50 transition ${
-                        currentUser.role === r.role ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
-                      }`}
-                    >
-                      <span className="flex items-center space-x-2">
-                        <span>{r.icon}</span>
-                        <span>{r.label}</span>
-                      </span>
-                      {currentUser.role === r.role && (
-                        <span className="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded">Active</span>
-                      )}
-                    </button>
-                  ))}
+                <>
+                  <div
+                    className="fixed inset-0 z-40 bg-transparent"
+                    onClick={() => setRoleDropdownOpen(false)}
+                  />
+                  <div
+                    className="absolute right-0 mt-2 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                    onClick={() => setRoleDropdownOpen(false)}
+                  >
+                    <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                      Switch Active Role
+                    </div>
+                    {roles.map((r) => (
+                      <button
+                        key={r.role}
+                        onClick={() => switchRole(r.role)}
+                        className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-indigo-50 transition ${
+                          currentUser.role === r.role ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
+                        }`}
+                      >
+                        <span className="flex items-center space-x-2">
+                          <span>{r.icon}</span>
+                          <span>{r.label}</span>
+                        </span>
+                        {currentUser.role === r.role && (
+                          <span className="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold">Active</span>
+                        )}
+                      </button>
+                    ))}
 
-                  <div className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 border-t border-slate-100 mt-1">
-                    Preset Test Profiles
+                    <div className="px-3.5 pt-2.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-t border-slate-100 mt-1">
+                      Preset Test Profiles
+                    </div>
+                    {users.slice(0, 4).map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => switchUser(u.id)}
+                        className="w-full text-left px-3.5 py-1.5 text-xs flex items-center space-x-2 hover:bg-slate-50 text-slate-600"
+                      >
+                        <img src={u.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        <span className="truncate">{u.name}</span>
+                        <span className="text-[10px] text-slate-400 capitalize">({u.role})</span>
+                      </button>
+                    ))}
                   </div>
-                  {users.slice(0, 4).map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => switchUser(u.id)}
-                      className="w-full text-left px-3 py-1.5 text-xs flex items-center space-x-2 hover:bg-slate-50 text-slate-600"
-                    >
-                      <img src={u.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
-                      <span className="truncate">{u.name}</span>
-                      <span className="text-[10px] text-slate-600 capitalize">({u.role})</span>
-                    </button>
-                  ))}
-                </div>
+                </>
               )}
             </div>
           ) : (
             <button
               onClick={() => setShowLoginModal(true)}
-              className="flex items-center space-x-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-2.5 py-0.5 rounded-full text-xs transition"
+              className="flex items-center space-x-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1 rounded-full text-xs transition shadow-xs"
             >
-              <LogIn className="w-3 h-3" />
+              <LogIn className="w-3.5 h-3.5" />
               <span>Log In to Account</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Main Nav */}
+      {/* Main Nav with generous padding and margins */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 whitespace-nowrap">
+        <div className="flex items-center justify-between h-18 sm:h-20 whitespace-nowrap">
           {/* Logo (Single Line) */}
-          <div className="flex items-center space-x-8 shrink-0">
-            <Link to="/" className="flex items-center space-x-2.5 group shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
+          <div className="flex items-center space-x-6 sm:space-x-8 shrink-0">
+            <Link to="/" className="flex items-center space-x-2.5 group shrink-0 pr-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
                 <span className="text-white font-extrabold text-xl tracking-tighter">co</span>
               </div>
               <div className="flex items-center space-x-1.5 whitespace-nowrap">
-                <span className="font-extrabold text-xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
+                <span className="font-extrabold text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
                   co-lab
                 </span>
-                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
                   Marketplace
                 </span>
               </div>
@@ -162,10 +221,10 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
+                  className={`px-3.5 py-2 rounded-xl text-sm font-medium transition flex items-center space-x-1.5 whitespace-nowrap shrink-0 ${
                     isActive(link.path)
-                      ? 'text-indigo-600 bg-indigo-50/70 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      ? 'text-indigo-600 bg-indigo-50/80 font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
                   <span>{link.label}</span>
@@ -180,142 +239,162 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Search bar & Right Actions */}
-          <div className="hidden md:flex items-center space-x-3 shrink-0">
+          <div className="hidden md:flex items-center space-x-3.5 shrink-0 pl-4">
             {/* Search Input */}
             <div className="relative w-44 lg:w-56">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-600" />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search creators, niches..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition"
+                className="w-full pl-10 pr-3.5 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
               />
             </div>
 
-            {/* Post Campaign CTA for Business / Agency */}
-            {isLoggedIn && currentUser && (currentUser.role === 'business' || currentUser.role === 'agency') && (
-              <Link
-                to="/create-campaign"
-                className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition hover:shadow-indigo-200 shrink-0"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Post Campaign</span>
-              </Link>
-            )}
-
-            {/* Messages */}
-            {isLoggedIn && (
-              <Link
-                to="/messages"
-                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition relative"
-                title="Deal Messages"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-600 rounded-full"></span>
-              </Link>
-            )}
-
-            {/* Admin shortcut if admin */}
-            {isLoggedIn && currentUser?.role === 'admin' && (
-              <Link
-                to="/admin"
-                className="flex items-center space-x-1 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 px-2 py-1 rounded-lg text-xs font-bold transition shrink-0"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                <span>Admin</span>
-              </Link>
-            )}
-
-            {/* PROFILE ICON ONLY (Dashboard link removed as requested) */}
+            {/* If Logged In: show user actions */}
             {isLoggedIn && currentUser ? (
-              <div className="relative pl-1 border-l border-slate-200">
-                <button
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex items-center focus:outline-none group"
-                  title="Profile & Account Menu"
-                >
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/20 group-hover:ring-indigo-500 transition shadow-xs"
-                  />
-                </button>
-
-                {profileDropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
-                    onClick={() => setProfileDropdownOpen(false)}
+              <>
+                {/* Post Campaign CTA for Business / Agency */}
+                {(currentUser.role === 'business' || currentUser.role === 'agency') && (
+                  <Link
+                    to="/create-campaign"
+                    className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition hover:shadow-indigo-200 shrink-0"
                   >
-                    {/* User Profile Header */}
-                    <div className="px-4 py-3 border-b border-slate-100 flex items-center space-x-3">
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Post Campaign</span>
+                  </Link>
+                )}
+
+                {/* Messages */}
+                <Link
+                  to="/messages"
+                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition relative shrink-0"
+                  title="Deal Messages"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-600 rounded-full"></span>
+                </Link>
+
+                {/* Admin shortcut if admin */}
+                {currentUser?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center space-x-1 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+
+                {/* PROFILE ICON ONLY (Clicking outside closes it immediately) */}
+                <div className="relative pl-2 border-l border-slate-200" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center focus:outline-none group p-0.5 rounded-full ring-2 ring-transparent hover:ring-indigo-400 transition"
+                    title="Profile & Account Menu"
+                  >
+                    <div className="relative">
                       <img
                         src={currentUser.avatar}
-                        alt=""
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100 shrink-0"
+                        alt={currentUser.name}
+                        className="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20 group-hover:ring-indigo-500 transition shadow-xs"
                       />
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-bold text-xs text-slate-900 truncate">{currentUser.name}</h4>
-                        <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
-                        <span className="inline-block mt-0.5 text-[9px] font-bold uppercase bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded">
-                          {currentUser.role}
-                        </span>
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 ring-2 ring-white rounded-full"></span>
+                    </div>
+                  </button>
+
+                  {profileDropdownOpen && (
+                    <>
+                      {/* Transparent backdrop to catch any click on screen */}
+                      <div
+                        className="fixed inset-0 z-40 bg-transparent"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      />
+                      <div
+                        className="absolute right-0 mt-3 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        {/* User Profile Header */}
+                        <div className="px-4 py-3 border-b border-slate-100 flex items-center space-x-3">
+                          <img
+                            src={currentUser.avatar}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-100 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-xs text-slate-900 truncate">{currentUser.name}</h4>
+                            <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
+                            <span className="inline-block mt-0.5 text-[9px] font-bold uppercase bg-indigo-50 text-indigo-700 px-1.5 py-0.2 rounded">
+                              {currentUser.role}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Navigation Menu */}
+                        <div className="py-1 text-xs">
+                          <Link
+                            to="/dashboard"
+                            className="flex items-center space-x-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium transition"
+                          >
+                            <UserCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <span>My Profile & Dashboard</span>
+                          </Link>
+
+                          <Link
+                            to="/messages"
+                            className="flex items-center space-x-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium transition"
+                          >
+                            <MessageSquare className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <span>Deal Room Messages</span>
+                          </Link>
+
+                          {currentUser.role === 'admin' && (
+                            <Link
+                              to="/admin"
+                              className="flex items-center space-x-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-bold transition"
+                            >
+                              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>Admin Control Panel</span>
+                            </Link>
+                          )}
+                        </div>
+
+                        {/* Logout Action */}
+                        <div className="border-t border-slate-100 pt-1 mt-1">
+                          <button
+                            onClick={() => {
+                              logout();
+                              setProfileDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition"
+                          >
+                            <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
+                            <span>Log Out</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Navigation Menu */}
-                    <div className="py-1 text-xs">
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center space-x-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium transition"
-                      >
-                        <UserCheck className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span>My Profile & Dashboard</span>
-                      </Link>
-
-                      <Link
-                        to="/messages"
-                        className="flex items-center space-x-2.5 px-4 py-2 hover:bg-slate-50 text-slate-700 font-medium transition"
-                      >
-                        <MessageSquare className="w-4 h-4 text-indigo-600 shrink-0" />
-                        <span>Deal Room Messages</span>
-                      </Link>
-
-                      {currentUser.role === 'admin' && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center space-x-2.5 px-4 py-2 hover:bg-amber-50 text-amber-900 font-bold transition"
-                        >
-                          <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span>Admin Control Panel</span>
-                        </Link>
-                      )}
-                    </div>
-
-                    {/* Logout Action */}
-                    <div className="border-t border-slate-100 pt-1 mt-1">
-                      <button
-                        onClick={() => {
-                          logout();
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition"
-                      >
-                        <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
-                        <span>Log Out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                    </>
+                  )}
+                </div>
+              </>
             ) : (
-              <button
-                onClick={() => setShowLoginModal(true)}
-                className="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Log In</span>
-              </button>
+              /* When NOT Logged In: show clean Log In and Sign Up buttons */
+              <div className="flex items-center space-x-2.5 pl-2 border-l border-slate-200">
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-slate-100 transition"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200"
+                >
+                  <span>Join co-lab</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             )}
           </div>
 
@@ -332,7 +411,7 @@ export const Navbar: React.FC = () => {
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-lg"
+                className="text-xs font-bold bg-indigo-600 text-white px-3 py-1.5 rounded-lg"
               >
                 Log In
               </button>

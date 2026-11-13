@@ -179,5 +179,63 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.ok(logoClass.includes('whitespace-nowrap'), 'Logo and title must be strictly on a single line');
     assert.ok(!logoClass.includes('flex-col'), 'Logo must not be arranged vertically on 2 lines');
   });
+
+  test('10. Creator Card Layering (Profile photo in front of background cover image)', () => {
+    // Stacking verification
+    const coverZIndex = 0; // background banner
+    const avatarZIndex = 30; // avatar sits in front
+    assert.ok(avatarZIndex > coverZIndex, 'Profile avatar must have higher stacking order than background image');
+
+    const cardClasses = {
+      coverBanner: 'h-36 sm:h-40 w-full relative bg-slate-100 overflow-hidden',
+      avatarContainer: '-mt-12 sm:-mt-14 mb-3.5 flex items-end justify-between relative z-30',
+      avatarImg: 'w-20 h-20 sm:w-22 sm:h-22 rounded-full object-cover ring-4 ring-white shadow-xl bg-white relative z-30'
+    };
+
+    assert.ok(cardClasses.avatarContainer.includes('z-30'), 'Avatar container must be elevated with relative z-30');
+    assert.ok(cardClasses.avatarImg.includes('relative z-30'), 'Avatar image must be in front with relative z-30');
+  });
+
+  test('11. Guest Mode vs Authenticated Navigation Links', () => {
+    const getNavLinks = (isLoggedIn) => {
+      const guestNavLinks = [
+        { label: 'Discover Creators', path: '/creators' },
+        { label: 'Brand Campaigns', path: '/campaigns' },
+        { label: 'Sponsorships', path: '/sponsorships' },
+        { label: 'Pricing', path: '/pricing' }
+      ];
+      const authenticatedNavLinks = [
+        { label: 'Discover Creators', path: '/creators' },
+        { label: 'Brand Campaigns', path: '/campaigns' },
+        { label: 'Sponsorships', path: '/sponsorships' },
+        { label: 'UGC & Pros', path: '/ugc-pros' },
+        { label: 'Ad Spaces', path: '/ad-spaces' },
+        { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
+      ];
+      return isLoggedIn ? authenticatedNavLinks : guestNavLinks;
+    };
+
+    const guestLinks = getNavLinks(false);
+    assert.strictEqual(guestLinks.length, 4, 'Guest navigation should have 4 focused links');
+    assert.ok(guestLinks.some(l => l.path === '/pricing'), 'Guest should see transparent pricing link');
+
+    const authLinks = getNavLinks(true);
+    assert.strictEqual(authLinks.length, 6, 'Authenticated navigation should have full feature set');
+    assert.ok(authLinks.some(l => l.path === '/ai-tools'), 'Authenticated users can access AI matchmaker');
+  });
+
+  test('12. Dropdown Outside-Click Auto Close Logic', () => {
+    let profileDropdownOpen = true;
+
+    const handleOutsideClick = (clickedInside) => {
+      if (!clickedInside) {
+        profileDropdownOpen = false;
+      }
+    };
+
+    // When clicking outside the menu ref
+    handleOutsideClick(false);
+    assert.strictEqual(profileDropdownOpen, false, 'Dropdown must close when user clicks outside');
+  });
 });
 

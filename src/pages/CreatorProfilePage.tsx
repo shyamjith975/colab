@@ -147,7 +147,7 @@ export const CreatorProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Top Banner */}
-      <div className="h-56 sm:h-72 w-full relative">
+      <div className="h-60 sm:h-80 w-full relative z-0">
         <img
           src={creator.coverImage}
           alt=""
@@ -157,7 +157,7 @@ export const CreatorProfilePage: React.FC = () => {
 
         <button
           onClick={() => navigate('/creators')}
-          className="absolute top-4 left-4 z-10 flex items-center space-x-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+          className="absolute top-4 left-4 z-10 flex items-center space-x-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to directory</span>
@@ -165,14 +165,14 @@ export const CreatorProfilePage: React.FC = () => {
       </div>
 
       {/* Main Profile Header Card */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 sm:-mt-24 relative z-20">
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-premium">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5">
               <img
                 src={creator.avatar}
                 alt={creator.name}
-                className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover ring-4 ring-white shadow-xl -mt-14 sm:-mt-16 bg-white"
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl object-cover ring-4 ring-white shadow-xl -mt-16 sm:-mt-20 bg-white relative z-30"
               />
               <div className="text-center sm:text-left space-y-1">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">

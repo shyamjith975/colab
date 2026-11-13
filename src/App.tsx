@@ -20,6 +20,7 @@ import { MessagesPage } from './pages/MessagesPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
 import { AiToolsPage } from './pages/AiToolsPage';
+import { PricingPage } from './pages/PricingPage';
 
 export const App: React.FC = () => {
   return (
@@ -37,6 +38,7 @@ export const App: React.FC = () => {
               <Route path="/sponsorships" element={<SponsorshipsPage />} />
               <Route path="/ugc-pros" element={<UgcMarketplacePage />} />
               <Route path="/ad-spaces" element={<AdSpaceMarketplacePage />} />
+              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/collaborations/:id" element={<CollaborationDealRoomPage />} />
               <Route path="/messages" element={<MessagesPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />

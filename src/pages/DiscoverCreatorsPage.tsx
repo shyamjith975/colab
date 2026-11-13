@@ -12,7 +12,8 @@ import {
   ArrowUpDown,
   X,
   Share2,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CreatorProfile } from '../types';
@@ -109,14 +110,41 @@ export const DiscoverCreatorsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+    <div className="min-h-screen bg-slate-50/60 pt-6 pb-20 sm:pt-8 sm:pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Guest Banner if not logged in */}
+        {!isLoggedIn && (
+          <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 border border-indigo-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
+                ✨
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Browsing in Guest Mode</h4>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Browse creators freely. Sign in to view verified media kits, unlock custom rates, and launch commercial collaborations.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition shrink-0 hover:shadow-indigo-200"
+            >
+              Log In / Sign Up
+            </button>
+          </div>
+        )}
+
+        {/* Header with generous margins */}
+        <div className="space-y-1">
+          <div className="inline-flex items-center space-x-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-1">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Multi-Platform Creator Marketplace</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Discover Creators & Influencers
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-sm text-slate-600">
             Search from 20+ verified creators across India with transparent pricing from ₹1,000 to ₹11,000.
           </p>
         </div>
@@ -253,106 +281,117 @@ export const DiscoverCreatorsPage: React.FC = () => {
                   className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-200 cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
-                    {/* Cover image & Category pill */}
-                    <div className="h-32 w-full relative">
+                    {/* 1st image as background banner */}
+                    <div className="h-36 sm:h-40 w-full relative bg-slate-100 overflow-hidden">
                       <img
                         src={creator.coverImage}
                         alt=""
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                       />
-                      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+
+                      <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full z-10 shadow-xs">
                         {creator.category}
                       </div>
 
                       {/* Compare toggle button */}
                       <button
                         onClick={(e) => toggleCompare(creator, e)}
-                        className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-md transition ${
+                        className={`absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-1 rounded-md backdrop-blur-md transition ${
                           isCompared
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-white/80 text-slate-800 hover:bg-white'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-white/90 text-slate-800 hover:bg-white shadow-xs'
                         }`}
                       >
                         {isCompared ? '✓ Compared' : '+ Compare'}
                       </button>
                     </div>
 
-                    {/* Body */}
-                    <div className="px-5 pt-0 pb-4">
-                      {/* Avatar */}
-                      <div className="-mt-10 mb-3 flex items-end justify-between">
-                        <img
-                          src={creator.avatar}
-                          alt={creator.name}
-                          className="w-16 h-16 rounded-full object-cover ring-4 ring-white shadow-md"
-                        />
-                        <div className="flex items-center space-x-1 bg-amber-50 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-md border border-amber-200">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                          <span>{creator.rating.toFixed(1)}</span>
-                          <span className="text-slate-600 text-[10px]">({creator.reviewsCount})</span>
+                    {/* Body with Profile Photo in FRONT */}
+                    <div className="px-5 pt-0 pb-5 relative z-20 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* Profile Avatar cleanly in FRONT */}
+                        <div className="-mt-12 sm:-mt-14 mb-3.5 flex items-end justify-between relative z-30">
+                          <div className="relative">
+                            <img
+                              src={creator.avatar}
+                              alt={creator.name}
+                              className="w-20 h-20 sm:w-22 sm:h-22 rounded-full object-cover ring-4 ring-white shadow-xl bg-white relative z-30"
+                            />
+                            {creator.verified && (
+                              <div className="absolute bottom-0 right-0 bg-indigo-600 text-white p-0.5 rounded-full ring-2 ring-white z-40" title="Verified Creator">
+                                <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center space-x-1 bg-amber-50/90 backdrop-blur-xs text-amber-800 text-xs font-bold px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-xs relative z-30">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                            <span>{creator.rating.toFixed(1)}</span>
+                            <span className="text-slate-500 text-[10px]">({creator.reviewsCount})</span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Name & Handle */}
-                      <div className="flex items-center space-x-1.5">
-                        <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition truncate">
-                          {creator.name}
-                        </h3>
-                        {creator.verified && (
-                          <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-600 mb-1">{creator.handle}</p>
-
-                      <div className="flex items-center space-x-1 text-[11px] text-slate-600 mb-2">
-                        <MapPin className="w-3 h-3 text-slate-600" />
-                        <span className="truncate">{creator.location}</span>
-                      </div>
-
-                      <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">
-                        {creator.bio}
-                      </p>
-
-                      {/* Verified stats row */}
-                      <div className="grid grid-cols-2 gap-2 py-2 px-3 bg-slate-50 rounded-xl mb-3 border border-slate-100 text-xs">
-                        <div>
-                          <span className="text-[10px] text-slate-600 block uppercase font-semibold">Audience</span>
-                          <span className="font-bold text-slate-800">
-                            {formatCompactNumber(primaryAccount?.followersCount || 10000)}
-                          </span>
+                        {/* Name & Handle */}
+                        <div className="flex items-center space-x-1.5">
+                          <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition truncate">
+                            {creator.name}
+                          </h3>
                         </div>
-                        <div>
-                          <span className="text-[10px] text-slate-600 block uppercase font-semibold">Engagement</span>
-                          <span className="font-bold text-emerald-600">
-                            {primaryAccount?.engagementRate || 5.0}%
-                          </span>
-                        </div>
-                      </div>
+                        <p className="text-xs text-slate-500 mb-1">{creator.handle}</p>
 
-                      {/* Badges */}
-                      <div className="flex flex-wrap gap-1">
-                        {creator.badges.slice(0, 2).map((b) => (
-                          <span key={b} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-medium">
-                            {b}
-                          </span>
-                        ))}
+                        <div className="flex items-center space-x-1 text-[11px] text-slate-500 mb-2">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <span className="truncate">{creator.location}</span>
+                        </div>
+
+                        <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">
+                          {creator.bio}
+                        </p>
+
+                        {/* Verified stats row */}
+                        <div className="grid grid-cols-2 gap-2 py-2.5 px-3 bg-slate-50 rounded-xl mb-3 border border-slate-100 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-500 block uppercase font-semibold">Audience</span>
+                            <span className="font-bold text-slate-800">
+                              {formatCompactNumber(primaryAccount?.followersCount || 10000)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-500 block uppercase font-semibold">Engagement</span>
+                            <span className="font-bold text-emerald-600">
+                              {primaryAccount?.engagementRate || 5.0}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="flex flex-wrap gap-1">
+                          {creator.badges.slice(0, 2).map((b) => (
+                            <span key={b} className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-medium">
+                              {b}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Footer & Rate Card preview */}
-                  <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs">
+                  <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Rate card from</span>
+                      <span className="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">
+                        {isLoggedIn ? 'Rate card from' : 'Starting from'}
+                      </span>
                       <span className="font-extrabold text-indigo-700 text-sm">
                         {formatCurrency(creator.minPrice)}
                       </span>
                     </div>
                     <button
                       onClick={(e) => handleViewProfile(creator.id, e)}
-                      className="text-xs font-bold bg-indigo-600 group-hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition shadow-xs"
+                      className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl transition shadow-xs hover:shadow-indigo-200"
                     >
-                      View Profile
+                      {isLoggedIn ? 'View Media Kit →' : 'Log In to View 🔒'}
                     </button>
                   </div>
                 </div>
