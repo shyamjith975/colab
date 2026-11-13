@@ -302,3 +302,4 @@ export const CollectivesPage: React.FC = () => {
     </div>
   );
 };
+

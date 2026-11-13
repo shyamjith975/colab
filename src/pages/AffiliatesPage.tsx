@@ -287,3 +287,4 @@ export const AffiliatesPage: React.FC = () => {
     </div>
   );
 };
+

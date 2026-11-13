@@ -77,18 +77,76 @@ export const Navbar: React.FC = () => {
     icon?: string;
   }
 
-  // All desktop navigation tabs (displayed directly without "More")
-  const desktopNavTabs: NavItem[] = [
-    { label: 'Creators', path: '/creators' },
-    { label: 'Campaigns', path: '/campaigns' },
-    { label: 'Local Ads', path: '/local-ads' },
-    { label: 'Collectives', path: '/collectives' },
-    { label: 'Affiliates', path: '/affiliates' },
-    { label: 'Sponsorships', path: '/sponsorships' },
-    { label: 'UGC Pros', path: '/ugc-pros' },
-    { label: 'Ad Spaces', path: '/ad-spaces' },
-    { label: 'AI Match', path: '/ai-tools', badge: 'AI' }
-  ];
+  // Dynamic Desktop Navigation Tabs tailored to active role (eliminating menu overflow)
+  const getDesktopNavTabs = (): NavItem[] => {
+    if (!isLoggedIn || !currentUser) {
+      return [
+        { label: 'Creators', path: '/creators' },
+        { label: 'Campaigns', path: '/campaigns' },
+        { label: 'Sponsorships', path: '/sponsorships' },
+        { label: 'Local Ads', path: '/local-ads' },
+        { label: 'Pricing', path: '/pricing' }
+      ];
+    }
+
+    switch (currentUser.role) {
+      case 'sponsor':
+        return [
+          { label: 'Sponsorships', path: '/sponsorships' },
+          { label: 'Post RFP', path: '/sponsor-requirements', badge: 'RFP' },
+          { label: 'Local Ads', path: '/local-ads' },
+          { label: 'Collectives', path: '/collectives' },
+          { label: 'ROI & Invoices', path: '/dashboard' }
+        ];
+      case 'business':
+        return [
+          { label: 'Discover Creators', path: '/creators' },
+          { label: 'Post Campaign', path: '/create-campaign' },
+          { label: 'Local Ads', path: '/local-ads' },
+          { label: 'Collectives', path: '/collectives' },
+          { label: 'Ad Spaces', path: '/ad-spaces' }
+        ];
+      case 'creator':
+        return [
+          { label: 'Find Campaigns', path: '/campaigns' },
+          { label: 'Sponsorships', path: '/sponsorships' },
+          { label: 'UGC Work', path: '/ugc-pros' },
+          { label: 'Affiliates', path: '/affiliates' },
+          { label: 'AI Match', path: '/ai-tools', badge: 'AI' }
+        ];
+      case 'organiser':
+        return [
+          { label: 'My Sponsorships', path: '/sponsorships' },
+          { label: 'Sponsor RFPs', path: '/sponsor-requirements', badge: 'RFPs' },
+          { label: 'Local Ads', path: '/local-ads' },
+          { label: 'Deal Rooms', path: '/dashboard' }
+        ];
+      case 'agency':
+        return [
+          { label: 'Client Hub', path: '/dashboard' },
+          { label: 'Creators Roster', path: '/creators' },
+          { label: 'Campaigns', path: '/campaigns' },
+          { label: 'Collectives', path: '/collectives' },
+          { label: 'Affiliates', path: '/affiliates' }
+        ];
+      case 'admin':
+        return [
+          { label: 'Admin Hub', path: '/admin' },
+          { label: 'Deal Rooms', path: '/dashboard' },
+          { label: 'Creators', path: '/creators' },
+          { label: 'Campaigns', path: '/campaigns' }
+        ];
+      default:
+        return [
+          { label: 'Creators', path: '/creators' },
+          { label: 'Campaigns', path: '/campaigns' },
+          { label: 'Sponsorships', path: '/sponsorships' },
+          { label: 'Local Ads', path: '/local-ads' }
+        ];
+    }
+  };
+
+  const desktopNavTabs: NavItem[] = getDesktopNavTabs();
 
   // Full options specifically for mobile view
   const mobileNavLinks: NavItem[] = [
@@ -98,6 +156,7 @@ export const Navbar: React.FC = () => {
     { label: 'Creator Collectives', path: '/collectives', icon: '👥', badge: 'Bundle' },
     { label: 'Affiliate Marketplace', path: '/affiliates', icon: '💰', badge: 'Recurring' },
     { label: 'Sponsorships & Events', path: '/sponsorships', icon: '🎪' },
+    { label: 'Post Sponsor RFP', path: '/sponsor-requirements', icon: '📋', badge: 'Sponsor' },
     { label: 'UGC & Creative Pros', path: '/ugc-pros', icon: '🎬' },
     { label: 'Ad Space Inventory', path: '/ad-spaces', icon: '📰' },
     { label: 'AI Creator Matchmaker', path: '/ai-tools', icon: '✨', badge: 'AI' },
@@ -250,7 +309,7 @@ export const Navbar: React.FC = () => {
           {/* Search bar & Right Actions */}
           <div className="hidden md:flex items-center space-x-2.5 lg:space-x-3 shrink-0">
             {/* Search Input (Responsive width) */}
-            <div className="relative w-28 lg:w-36 xl:w-44 focus-within:w-48 transition-all duration-200">
+            <div className="relative w-24 md:w-32 lg:w-36 focus-within:w-44 transition-all duration-200">
               <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
@@ -261,10 +320,21 @@ export const Navbar: React.FC = () => {
               />
             </div>
 
-            {/* If Logged In: show user actions */}
+            {/* If Logged In: show role-tailored CTA & user actions */}
             {isLoggedIn && currentUser ? (
               <>
-                {/* Post Campaign CTA for Business / Agency */}
+                {/* Sponsor: Post RFP Requirement */}
+                {currentUser.role === 'sponsor' && (
+                  <Link
+                    to="/sponsor-requirements"
+                    className="inline-flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-amber-200 shrink-0"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Post Sponsor RFP</span>
+                  </Link>
+                )}
+
+                {/* Business / Agency: Post Campaign */}
                 {(currentUser.role === 'business' || currentUser.role === 'agency') && (
                   <Link
                     to="/create-campaign"
@@ -272,6 +342,28 @@ export const Navbar: React.FC = () => {
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Post Campaign</span>
+                  </Link>
+                )}
+
+                {/* Creator: Find Campaigns */}
+                {currentUser.role === 'creator' && (
+                  <Link
+                    to="/campaigns"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Find Deals</span>
+                  </Link>
+                )}
+
+                {/* Organiser: List Event Sponsorship */}
+                {currentUser.role === 'organiser' && (
+                  <Link
+                    to="/sponsorships"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>List Event</span>
                   </Link>
                 )}
 
@@ -526,14 +618,45 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {isLoggedIn && currentUser && (currentUser.role === 'business' || currentUser.role === 'agency') && (
-            <Link
-              to="/create-campaign"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-semibold shadow-sm"
-            >
-              Post a New Campaign
-            </Link>
+          {isLoggedIn && currentUser && (
+            <div className="pt-2">
+              {currentUser.role === 'sponsor' && (
+                <Link
+                  to="/sponsor-requirements"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-sm shadow-sm"
+                >
+                  Post Sponsor RFP & Requirements
+                </Link>
+              )}
+              {(currentUser.role === 'business' || currentUser.role === 'agency') && (
+                <Link
+                  to="/create-campaign"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm"
+                >
+                  Post a New Campaign
+                </Link>
+              )}
+              {currentUser.role === 'creator' && (
+                <Link
+                  to="/campaigns"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm"
+                >
+                  Browse Brand Deals
+                </Link>
+              )}
+              {currentUser.role === 'organiser' && (
+                <Link
+                  to="/sponsorships"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm"
+                >
+                  List Sponsorship Package
+                </Link>
+              )}
+            </div>
           )}
         </div>
       )}

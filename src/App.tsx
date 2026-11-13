@@ -35,6 +35,7 @@ import { PricingPage } from './pages/PricingPage';
 import { LocalAdsPage } from './pages/LocalAdsPage';
 import { CollectivesPage } from './pages/CollectivesPage';
 import { AffiliatesPage } from './pages/AffiliatesPage';
+import { SponsorRequirementsPage } from './pages/SponsorRequirementsPage';
 
 export const App: React.FC = () => {
   return (
@@ -51,6 +52,7 @@ export const App: React.FC = () => {
               <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/create-campaign" element={<CreateCampaignPage />} />
               <Route path="/sponsorships" element={<SponsorshipsPage />} />
+              <Route path="/sponsor-requirements" element={<SponsorRequirementsPage />} />
               <Route path="/ugc-pros" element={<UgcMarketplacePage />} />
               <Route path="/ad-spaces" element={<AdSpaceMarketplacePage />} />
               <Route path="/local-ads" element={<LocalAdsPage />} />

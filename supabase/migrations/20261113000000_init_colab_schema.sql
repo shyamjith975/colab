@@ -309,6 +309,114 @@ CREATE TABLE platform_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 19. SPONSOR REQUIREMENT RFPS
+CREATE TABLE sponsor_rfps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    brand_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    brand_name TEXT NOT NULL,
+    brand_logo TEXT,
+    industry TEXT NOT NULL,
+    title TEXT NOT NULL,
+    target_event_types TEXT[] NOT NULL DEFAULT '{}',
+    budget_max NUMERIC(12, 2) NOT NULL,
+    min_footfall INT DEFAULT 1000,
+    required_perks TEXT[] NOT NULL DEFAULT '{}',
+    target_cities TEXT[] NOT NULL DEFAULT '{}',
+    brief TEXT NOT NULL,
+    deadline TIMESTAMP WITH TIME ZONE NOT NULL,
+    proposals_received INT DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 20. HYPERLOCAL ADVERTISING CHANNELS
+CREATE TABLE local_ad_channels (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    channel_name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    city TEXT NOT NULL,
+    locality TEXT NOT NULL,
+    audience_reach INT NOT NULL,
+    followers_count INT NOT NULL,
+    price_per_slot NUMERIC(10, 2) NOT NULL,
+    slot_format TEXT NOT NULL,
+    engagement_rate NUMERIC(4, 2) NOT NULL,
+    verified BOOLEAN DEFAULT TRUE,
+    category TEXT NOT NULL
+);
+
+-- 21. CREATOR COLLECTIVES
+CREATE TABLE creator_collectives (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    tagline TEXT NOT NULL,
+    region TEXT NOT NULL,
+    category TEXT NOT NULL,
+    creator_count INT NOT NULL,
+    combined_reach INT NOT NULL,
+    package_price NUMERIC(12, 2) NOT NULL,
+    package_deliverables TEXT[] NOT NULL DEFAULT '{}',
+    creators JSONB NOT NULL DEFAULT '[]'::jsonb
+);
+
+-- 22. AFFILIATE PROGRAMS & PERFORMANCE LINKS
+CREATE TABLE affiliate_programs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    brand_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    brand_name TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    product_price NUMERIC(10, 2) NOT NULL,
+    commission_type TEXT NOT NULL DEFAULT 'percentage',
+    commission_rate NUMERIC(5, 2) NOT NULL,
+    cookie_days INT DEFAULT 30,
+    active_creators INT DEFAULT 0,
+    category TEXT NOT NULL
+);
+
+CREATE TABLE creator_affiliate_links (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    program_id UUID REFERENCES affiliate_programs(id) ON DELETE CASCADE,
+    creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    tracking_url TEXT UNIQUE NOT NULL,
+    coupon_code TEXT UNIQUE NOT NULL,
+    clicks INT DEFAULT 0,
+    orders INT DEFAULT 0,
+    revenue_generated NUMERIC(12, 2) DEFAULT 0.00,
+    commission_earned NUMERIC(12, 2) DEFAULT 0.00
+);
+
+-- 23. CREATOR BOOKING SLOTS
+CREATE TABLE booking_slots (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    service_type TEXT NOT NULL,
+    date DATE NOT NULL,
+    time_slot TEXT NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    is_booked BOOLEAN DEFAULT FALSE,
+    booked_by UUID REFERENCES profiles(id)
+);
+
+-- 24. PERFORMANCE ATTRIBUTIONS & TRACKING
+CREATE TABLE performance_attributions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
+    creator_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    tracking_url TEXT NOT NULL,
+    coupon_code TEXT NOT NULL,
+    qr_code_url TEXT,
+    verified_views INT DEFAULT 0,
+    creator_reported_views INT DEFAULT 0,
+    clicks INT DEFAULT 0,
+    enquiries INT DEFAULT 0,
+    conversions INT DEFAULT 0,
+    attributed_sales_inr NUMERIC(12, 2) DEFAULT 0.00,
+    cpl_inr NUMERIC(10, 2) DEFAULT 0.00,
+    roi_multiple NUMERIC(5, 2) DEFAULT 0.00
+);
+
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ====================================================================

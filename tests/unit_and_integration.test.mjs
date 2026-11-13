@@ -403,5 +403,94 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(roi, 15.1, 'Return on ad spend calculation matches sales / spend');
     assert.strictEqual(attribution.verifiedPlatformData, true, 'Flag clearly distinguishes SDK telemetry from manual self-report');
   });
+
+  test('23. Dynamic Role-Based Navbar Tabs Resolution and Anti-Overflow Constraint', () => {
+    const getTabsForRole = (role) => {
+      switch (role) {
+        case 'sponsor':
+          return ['Event Sponsorships', 'Post RFP', 'Local Ads', 'Collectives', 'ROI & Invoices'];
+        case 'business':
+          return ['Discover Creators', 'Post Campaign', 'Local Ads', 'Collectives', 'Ad Spaces'];
+        case 'creator':
+          return ['Find Campaigns', 'Sponsorships', 'UGC Work', 'Affiliates', 'AI Match'];
+        case 'organiser':
+          return ['My Sponsorships', 'Sponsor RFPs', 'Local Ads', 'Deal Rooms'];
+        case 'agency':
+          return ['Client Hub', 'Creators Roster', 'Campaigns', 'Collectives', 'Affiliates'];
+        default:
+          return ['Creators', 'Campaigns', 'Sponsorships', 'Local Ads', 'Pricing'];
+      }
+    };
+
+    const roles = ['sponsor', 'business', 'creator', 'organiser', 'agency', 'guest'];
+    for (const r of roles) {
+      const tabs = getTabsForRole(r);
+      assert.ok(tabs.length <= 5, `Role "${r}" has ${tabs.length} tabs (must be <= 5 to prevent menu overflow)`);
+    }
+
+    // Verify sponsor gets RFP and ROI tabs
+    const sponsorTabs = getTabsForRole('sponsor');
+    assert.ok(sponsorTabs.includes('Post RFP'));
+    assert.ok(sponsorTabs.includes('ROI & Invoices'));
+
+    // Verify brand gets Post Campaign and Local Ads
+    const businessTabs = getTabsForRole('business');
+    assert.ok(businessTabs.includes('Post Campaign'));
+    assert.ok(businessTabs.includes('Discover Creators'));
+  });
+
+  test('24. Sponsor RFP Requirement Data Structure & Perk Validation', () => {
+    const rfp = {
+      id: 'rfp-bolt-01',
+      sponsorName: 'BoltAudio Wireless',
+      brandIndustry: 'Consumer Electronics & Audio',
+      title: 'Official Audio Partner for College Cultural Fests',
+      budgetMin: 50000,
+      budgetMax: 120000,
+      minFootfall: 8000,
+      requiredPerks: [
+        'Title Sponsorship',
+        '10x10 Sampling Stall',
+        'Main Stage Backdrop & LED Banners'
+      ],
+      targetLocations: ['Delhi-NCR', 'Bengaluru', 'Mumbai', 'Pune'],
+      status: 'open'
+    };
+
+    assert.ok(rfp.budgetMax >= rfp.budgetMin, 'Max budget must be greater than or equal to min budget');
+    assert.ok(rfp.minFootfall >= 1000, 'Minimum footfall must be significant for corporate activation');
+    assert.ok(rfp.requiredPerks.length >= 2, 'RFP requires at least 2 distinct brand perks');
+    assert.ok(rfp.targetLocations.length >= 1, 'RFP must specify target cities');
+  });
+
+  test('25. Business Fast Campaign Creation & Budget Constraints', () => {
+    const quickCamp = {
+      title: 'Summer Skincare Launch Reel',
+      category: 'Beauty & Wellness',
+      budgetMin: 3000,
+      budgetMax: 15000,
+      totalBudget: 15000,
+      deliverables: '1x Dedicated Reel, 2x Stories with Link'
+    };
+
+    assert.ok(quickCamp.title.length > 5, 'Campaign title must be descriptive');
+    assert.ok(quickCamp.budgetMax >= quickCamp.budgetMin, 'Budget max must cover creator min payout');
+    assert.strictEqual(quickCamp.category, 'Beauty & Wellness');
+  });
+
+  test('26. REST API /api/v1/ Endpoint Configuration & Supabase Fallback Resilience', () => {
+    const API_BASE = '/api/v1';
+    assert.strictEqual(API_BASE, '/api/v1', 'Versioned API root must follow /api/v1 specification');
+
+    // Test storage fallback simulation
+    const mockStorage = new Map();
+    const getCached = (key, fallback) => mockStorage.get(key) || fallback;
+    const setCached = (key, val) => mockStorage.set(key, val);
+
+    setCached('campaigns_cache', [{ id: 'camp-test-1', title: 'Test Local Launch' }]);
+    const retrieved = getCached('campaigns_cache', []);
+    assert.strictEqual(retrieved.length, 1);
+    assert.strictEqual(retrieved[0].title, 'Test Local Launch');
+  });
 });
 

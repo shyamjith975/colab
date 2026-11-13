@@ -22,7 +22,8 @@ import {
   CreatorAffiliateLink,
   BookingSlot,
   PerformanceAttribution,
-  ProfessionalSubProfile
+  ProfessionalSubProfile,
+  SponsorRequirementRFP
 } from '../types';
 import {
   DEMO_USERS,
@@ -41,7 +42,8 @@ import {
   AFFILIATE_PROGRAMS,
   CREATOR_AFFILIATE_LINKS,
   BOOKING_SLOTS,
-  PERFORMANCE_ATTRIBUTIONS
+  PERFORMANCE_ATTRIBUTIONS,
+  SPONSOR_RFPS
 } from '../data/mockData';
 
 interface AppContextType {
@@ -73,8 +75,10 @@ interface AppContextType {
   creatorAffiliateLinks: CreatorAffiliateLink[];
   bookingSlots: BookingSlot[];
   performanceAttributions: PerformanceAttribution[];
+  sponsorRfps: SponsorRequirementRFP[];
   
   // Actions
+  createSponsorRfp: (rfp: Omit<SponsorRequirementRFP, 'id' | 'sponsorId' | 'sponsorName' | 'sponsorLogo' | 'proposalsCount' | 'createdAt'>) => SponsorRequirementRFP;
   switchSubProfile: (subProfileId: string) => void;
   createOrUpdateSubProfile: (profile: ProfessionalSubProfile) => void;
   bookConsultationSlot: (slotId: string, clientName: string) => void;
@@ -305,6 +309,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [performanceAttributions, setPerformanceAttributions] = useState<PerformanceAttribution[]>(() => {
     const saved = localStorage.getItem('colab_performance_attributions');
     return saved ? JSON.parse(saved) : PERFORMANCE_ATTRIBUTIONS;
+  });
+
+  const [sponsorRfps, setSponsorRfps] = useState<SponsorRequirementRFP[]>(() => {
+    const saved = localStorage.getItem('colab_sponsor_rfps');
+    return saved ? JSON.parse(saved) : SPONSOR_RFPS;
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -869,6 +878,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newCollab;
   };
 
+  const createSponsorRfp = (rfpData: Omit<SponsorRequirementRFP, 'id' | 'sponsorId' | 'sponsorName' | 'sponsorLogo' | 'proposalsCount' | 'createdAt'>): SponsorRequirementRFP => {
+    const newRfp: SponsorRequirementRFP = {
+      id: `rfp-${Date.now()}`,
+      sponsorId: currentUser?.id || 'user-sponsor-1',
+      sponsorName: currentUser?.name || 'Sponsoring Brand',
+      sponsorLogo: currentUser?.avatar || 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=200&q=80',
+      proposalsCount: 0,
+      createdAt: new Date().toISOString(),
+      ...rfpData
+    };
+    setSponsorRfps(prev => [newRfp, ...prev]);
+    return newRfp;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -900,6 +923,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         creatorAffiliateLinks,
         bookingSlots,
         performanceAttributions,
+        sponsorRfps,
+        createSponsorRfp,
         switchSubProfile,
         createOrUpdateSubProfile,
         bookConsultationSlot,

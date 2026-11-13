@@ -16,7 +16,8 @@ import {
   CreatorAffiliateLink,
   BookingSlot,
   PerformanceAttribution,
-  ProfessionalSubProfile
+  ProfessionalSubProfile,
+  SponsorRequirementRFP
 } from '../types';
 
 export const INITIAL_SETTINGS: PlatformSettings = {
@@ -3161,6 +3162,83 @@ export const PERFORMANCE_ATTRIBUTIONS: PerformanceAttribution[] = [
     creatorReportedScreenshots: [
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80'
     ]
+  }
+];
+
+// SPONSOR REQUIREMENTS & CALL FOR PROPOSALS (RFPs)
+export const SPONSOR_RFPS: SponsorRequirementRFP[] = [
+  {
+    id: 'rfp-1',
+    sponsorId: 'user-sponsor-1',
+    sponsorName: 'Red Bull Energy India',
+    sponsorLogo: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=200&q=80',
+    brandIndustry: 'Beverages & Youth Lifestyle',
+    title: 'National Campus Music & Esports Fest Sponsorship Program 2026-27',
+    targetEventTypes: ['College Cultural Fest', 'Esports Tournament', 'Dance Battle'],
+    budgetMin: 150000,
+    budgetMax: 350000,
+    minFootfall: 8000,
+    requiredPerks: [
+      'Title / Powered-by Naming Rights',
+      '10x10 ft Energy Zone Stall for Sampling',
+      '30s Video Spot on Main Stage LED Wall',
+      'Logo on Passes, Wristbands & Official Posters',
+      'Official DJ Stage Naming Rights'
+    ],
+    targetLocations: ['Mumbai', 'Delhi NCR', 'Bengaluru', 'Kochi', 'Pune'],
+    brief: 'Seeking energetic university festivals with strong youth and gaming crowds. We provide cold sampling inventory, DJ stage sound support, and substantial cash sponsorship to verified college unions.',
+    status: 'open',
+    proposalsCount: 9,
+    createdAt: '2026-11-01T09:00:00Z',
+    deadline: '2026-12-15T23:59:59Z'
+  },
+  {
+    id: 'rfp-2',
+    sponsorId: 'user-sponsor-2',
+    sponsorName: 'BoltAudio Acoustics',
+    sponsorLogo: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
+    brandIndustry: 'Consumer Electronics & Audio',
+    title: 'Developer Hackathon & Tech Summit Associate Sponsorship',
+    targetEventTypes: ['Tech Conference', '24h Hackathon', 'Robotics Expo'],
+    budgetMin: 80000,
+    budgetMax: 180000,
+    minFootfall: 3500,
+    requiredPerks: [
+      'Associate / Powered-By Sponsor Badge',
+      'Audio Experience Demo Booth',
+      'Winners Prize Sponsorship (ANC Headphones to Top 3 Teams)',
+      'Keynote Speaking Slot (15 min on Hardware Tech)'
+    ],
+    targetLocations: ['Bengaluru', 'Hyderabad', 'Thiruvananthapuram', 'Chennai'],
+    brief: 'We want to engage collegiate software developers and engineering teams. Looking for hackathons with active project demos and high student developer participation.',
+    status: 'open',
+    proposalsCount: 5,
+    createdAt: '2026-11-04T11:00:00Z',
+    deadline: '2026-12-20T23:59:59Z'
+  },
+  {
+    id: 'rfp-3',
+    sponsorId: 'user-sponsor-3',
+    sponsorName: 'NutriBlend Superfoods',
+    sponsorLogo: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80',
+    brandIndustry: 'Health & Sports Nutrition',
+    title: 'Inter-College Sports Meet & Marathon Hydration Title Sponsor',
+    targetEventTypes: ['Sports Tournament', 'Campus 10K Marathon', 'Athletics Meet'],
+    budgetMin: 100000,
+    budgetMax: 220000,
+    minFootfall: 5000,
+    requiredPerks: [
+      'Title Hydration & Protein Partner',
+      'Runner Kit Bag Inserts & Bib Logo',
+      'Finish Line Inflatable Arch Branding',
+      'Sampling Station at Marathon Expo'
+    ],
+    targetLocations: ['Mumbai', 'Bengaluru', 'Delhi NCR', 'Kochi'],
+    brief: 'Focus on university sports meets, football championships, and cross-country marathons. We provide protein samples, runner bib co-branding, and podium awards.',
+    status: 'open',
+    proposalsCount: 7,
+    createdAt: '2026-11-06T14:00:00Z',
+    deadline: '2026-12-30T23:59:59Z'
   }
 ];
 

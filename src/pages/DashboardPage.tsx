@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DollarSign,
@@ -55,12 +55,59 @@ export const DashboardPage: React.FC = () => {
     updateCampaignStatus,
     creatorAffiliateLinks,
     performanceAttributions,
-    switchSubProfile
+    switchSubProfile,
+    sponsorRfps,
+    createSponsorRfp,
+    createCampaign,
+    localAdChannels,
+    creatorCollectives
   } = useApp();
   const navigate = useNavigate();
 
   // Active sub-tab state
   const [activeTab, setActiveTab] = useState<string>('deals');
+
+  // Automatically update default active tab when active role changes
+  useEffect(() => {
+    if (currentUser?.role === 'sponsor') {
+      setActiveTab('sponsor-rfps');
+    } else if (currentUser?.role === 'business') {
+      setActiveTab('campaigns');
+    } else if (currentUser?.role === 'organiser') {
+      setActiveTab('events');
+    } else if (currentUser?.role === 'agency') {
+      setActiveTab('clients');
+    } else {
+      setActiveTab('deals');
+    }
+  }, [currentUser?.role]);
+
+  // Sponsor Requirement RFP Form State
+  const [rfpForm, setRfpForm] = useState({
+    title: '',
+    industry: 'Consumer Electronics & Audio',
+    targetEventTypes: ['college_fest', 'tech_summit'],
+    budgetMax: 200000,
+    minFootfall: 5000,
+    requiredPerks: ['Title Sponsorship', '10x10 Sampling Stall', 'Logo on Main Stage Backdrop'],
+    targetCities: 'Mumbai, Bengaluru, Delhi-NCR',
+    brief: '',
+    deadline: '2026-12-31'
+  });
+  const [rfpSuccessMsg, setRfpSuccessMsg] = useState(false);
+
+  // Business Quick Campaign Form State
+  const [quickCampaignForm, setQuickCampaignForm] = useState({
+    title: '',
+    category: 'Fashion & Style',
+    platform: 'Instagram',
+    deliverables: '1x Dedicated Reel, 2x Stories with Link',
+    budgetMin: 3000,
+    budgetMax: 15000,
+    location: 'Pan-India',
+    description: ''
+  });
+  const [quickCampaignSuccessMsg, setQuickCampaignSuccessMsg] = useState(false);
 
   // Unified Professional Identity Sub-Profiles
   const userSubProfiles: ProfessionalSubProfile[] = (currentUser?.subProfiles && currentUser.subProfiles.length > 0)
@@ -177,6 +224,99 @@ export const DashboardPage: React.FC = () => {
     navigate(`/collaborations/${newCollab.id}`);
   };
 
+  const handleCreateSponsorRfp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rfpForm.title.trim()) {
+      alert('Please enter a requirement title');
+      return;
+    }
+    createSponsorRfp({
+      title: rfpForm.title,
+      brandIndustry: rfpForm.industry,
+      targetEventTypes: rfpForm.targetEventTypes,
+      budgetMin: Math.round(Number(rfpForm.budgetMax) * 0.4),
+      budgetMax: Number(rfpForm.budgetMax),
+      minFootfall: Number(rfpForm.minFootfall),
+      requiredPerks: rfpForm.requiredPerks,
+      targetLocations: rfpForm.targetCities.split(',').map(s => s.trim()),
+      brief: rfpForm.brief || 'Looking for high-impact on-ground branding, sampling booth, and keynote presence.',
+      deadline: rfpForm.deadline,
+      status: 'open'
+    });
+    setRfpSuccessMsg(true);
+    setRfpForm({
+      title: '',
+      industry: 'Consumer Electronics & Audio',
+      targetEventTypes: ['college_fest', 'tech_summit'],
+      budgetMax: 200000,
+      minFootfall: 5000,
+      requiredPerks: ['Title Sponsorship', '10x10 Sampling Stall', 'Logo on Main Stage Backdrop'],
+      targetCities: 'Mumbai, Bengaluru, Delhi-NCR',
+      brief: '',
+      deadline: '2026-12-31'
+    });
+    setTimeout(() => setRfpSuccessMsg(false), 4000);
+  };
+
+  const handleCreateQuickCampaign = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickCampaignForm.title.trim()) {
+      alert('Please enter a campaign title');
+      return;
+    }
+    createCampaign({
+      title: quickCampaignForm.title,
+      description: quickCampaignForm.description || 'Promoting brand launch with creator unboxings and styling reels.',
+      category: quickCampaignForm.category,
+      productName: quickCampaignForm.title,
+      objectives: ['Brand Awareness', 'Conversions'],
+      targetAudience: {
+        locations: [quickCampaignForm.location],
+        ageRange: '18-34',
+        gender: 'All',
+        interests: [quickCampaignForm.category],
+        languages: ['English', 'Hindi']
+      },
+      requirements: {
+        platform: quickCampaignForm.platform,
+        contentFormat: 'Short-Form Video',
+        quantity: 1,
+        videoDuration: '60s',
+        storeVisitRequired: false,
+        licensingTerms: 'Digital Rights 90 Days',
+        deadline: '2026-12-30'
+      },
+      budget: {
+        type: 'fixed',
+        minAmount: Number(quickCampaignForm.budgetMin),
+        maxAmount: Number(quickCampaignForm.budgetMax),
+        totalBudget: Number(quickCampaignForm.budgetMax),
+        compensationDetails: `₹ ${quickCampaignForm.budgetMin} to ₹ ${quickCampaignForm.budgetMax} per creator`
+      },
+      settings: {
+        deadline: '2026-12-30',
+        maxCreators: 5,
+        slotsAvailable: 5,
+        minFollowers: 5000,
+        eligibilityNotes: 'Must have active engaged audience',
+        customQuestions: ['Have you promoted similar products before?']
+      },
+      status: 'active'
+    });
+    setQuickCampaignSuccessMsg(true);
+    setQuickCampaignForm({
+      title: '',
+      category: 'Fashion & Style',
+      platform: 'Instagram',
+      deliverables: '1x Dedicated Reel, 2x Stories with Link',
+      budgetMin: 3000,
+      budgetMax: 15000,
+      location: 'Pan-India',
+      description: ''
+    });
+    setTimeout(() => setQuickCampaignSuccessMsg(false), 4000);
+  };
+
   const handleSaveRateCard = (e: React.FormEvent) => {
     e.preventDefault();
     setRateSaved(true);
@@ -205,7 +345,12 @@ export const DashboardPage: React.FC = () => {
                 key={r}
                 onClick={() => {
                   switchRole(r);
-                  setActiveTab('deals');
+                  setActiveTab(
+                    r === 'sponsor' ? 'sponsor-rfps' :
+                    r === 'business' ? 'campaigns' :
+                    r === 'organiser' ? 'events' :
+                    r === 'agency' ? 'clients' : 'deals'
+                  );
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition capitalize ${
                   role === r
@@ -242,6 +387,16 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {role === 'sponsor' && (
+              <button
+                onClick={() => setActiveTab('sponsor-rfps')}
+                className="flex items-center space-x-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition shadow-xs"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Post Sponsor RFP</span>
+              </button>
+            )}
+
             {(role === 'business' || role === 'agency') && (
               <button
                 onClick={() => navigate('/create-campaign')}
@@ -480,35 +635,153 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        {/* Role-Specific Navigation Tabs */}
+        {/* Dynamic Role-Specific Navigation Tabs */}
         <div className="flex items-center space-x-1 sm:space-x-2 border-b border-slate-200 overflow-x-auto text-xs sm:text-sm font-semibold pb-1 scrollbar-none">
-          {/* Common / Deal Room Tab */}
-          <button
-            onClick={() => setActiveTab('deals')}
-            className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap ${
-              activeTab === 'deals'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            {role === 'creator' ? `Active Deal Rooms (${userCollaborations.length})` : `Deal Rooms & Approvals (${collaborations.length})`}
-          </button>
+          {/* SPONSOR TABS */}
+          {role === 'sponsor' && (
+            <>
+              <button
+                onClick={() => setActiveTab('sponsor-rfps')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'sponsor-rfps'
+                    ? 'border-amber-500 text-amber-800 font-black'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-amber-500" />
+                <span>My Sponsor RFPs & Requirements ({sponsorRfps.length})</span>
+              </button>
 
-          {/* Role Tab 2 */}
-          <button
-            onClick={() => setActiveTab('proposals')}
-            className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap ${
-              activeTab === 'proposals'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            {role === 'creator' ? `My Pitches & Invites (${userApplications.length})` : `Creator Applications (${applications.length})`}
-          </button>
+              <button
+                onClick={() => setActiveTab('events')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'events'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Browse Event Packages ({sponsorships.length})</span>
+              </button>
 
-          {/* Role Tab 3: Creator Rate Card OR Business Campaigns OR Agency Clients */}
+              <button
+                onClick={() => setActiveTab('sponsor-roi')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'sponsor-roi'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>Footfall & ROI Verification</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>Escrow Funds & GST Invoices</span>
+              </button>
+            </>
+          )}
+
+          {/* BUSINESS / BRAND TABS */}
+          {role === 'business' && (
+            <>
+              <button
+                onClick={() => setActiveTab('campaigns')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'campaigns'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>My Campaigns & Briefs ({campaigns.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'proposals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Creator Applications ({applications.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('deals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'deals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Deal Rooms & Approvals ({collaborations.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('local-collective')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'local-collective'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Local Ads & Collectives</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>GST Tax Invoices & Escrow</span>
+              </button>
+            </>
+          )}
+
+          {/* CREATOR TABS */}
           {role === 'creator' && (
             <>
+              <button
+                onClick={() => setActiveTab('deals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'deals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Active Deal Rooms ({userCollaborations.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'proposals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>My Pitches & Invites ({userApplications.length})</span>
+              </button>
+
               <button
                 onClick={() => setActiveTab('ratecard')}
                 className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
@@ -532,63 +805,591 @@ export const DashboardPage: React.FC = () => {
                 <PieChart className="w-3.5 h-3.5" />
                 <span>Verified Media Kit</span>
               </button>
+
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>Payouts & UPI</span>
+              </button>
             </>
           )}
 
-          {(role === 'business' || role === 'agency') && (
-            <button
-              onClick={() => setActiveTab('campaigns')}
-              className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
-                activeTab === 'campaigns'
-                  ? 'border-indigo-600 text-indigo-600 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>My Campaigns ({campaigns.length})</span>
-            </button>
+          {/* ORGANISER TABS */}
+          {role === 'organiser' && (
+            <>
+              <button
+                onClick={() => setActiveTab('events')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'events'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>My Event Packages ({sponsorships.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('sponsor-rfps')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'sponsor-rfps'
+                    ? 'border-amber-500 text-amber-800 font-black'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-amber-500" />
+                <span>Corporate Sponsor RFPs ({sponsorRfps.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('deals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'deals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Deal Rooms & Deliverables</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>Sponsorship Revenue & Escrow</span>
+              </button>
+            </>
           )}
 
+          {/* AGENCY TABS */}
           {role === 'agency' && (
-            <button
-              onClick={() => setActiveTab('clients')}
-              className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
-                activeTab === 'clients'
-                  ? 'border-indigo-600 text-indigo-600 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Agency Client Hub</span>
-            </button>
-          )}
+            <>
+              <button
+                onClick={() => setActiveTab('clients')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'clients'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Agency Client Hub</span>
+              </button>
 
-          {(role === 'organiser' || role === 'sponsor') && (
-            <button
-              onClick={() => setActiveTab('events')}
-              className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
-                activeTab === 'events'
-                  ? 'border-indigo-600 text-indigo-600 font-bold'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Event Sponsorship Packages ({sponsorships.length})</span>
-            </button>
-          )}
+              <button
+                onClick={() => setActiveTab('campaigns')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'campaigns'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>Client Campaigns ({campaigns.length})</span>
+              </button>
 
-          {/* Common / Financial Tab */}
-          <button
-            onClick={() => setActiveTab('transactions')}
-            className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap ${
-              activeTab === 'transactions'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            {role === 'creator' ? 'Payouts & UPI' : 'GST Invoices & Escrow'} ({transactions.length})
-          </button>
+              <button
+                onClick={() => setActiveTab('proposals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'proposals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Creator Applications ({applications.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('deals')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'deals'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Deal Rooms ({collaborations.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'transactions'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5" />
+                <span>GST Invoices & Escrow</span>
+              </button>
+            </>
+          )}
         </div>
+
+        {/* SPONSOR TAB 1: SPONSOR REQUIREMENTS & RFPs MANAGER */}
+        {activeTab === 'sponsor-rfps' && (
+          <div className="space-y-6">
+            {/* Sponsor Requirements Creation Card (Text Fields) */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
+                      Sponsor Corporate Portal
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">• Direct Event Procurement</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1">
+                    Post Corporate Sponsorship Requirement (RFP)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Publish your exact criteria (budget, footfall, perks, target cities). Event committees and podcast owners will submit verified pitch proposals.
+                  </p>
+                </div>
+
+                {rfpSuccessMsg && (
+                  <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold animate-fadeIn">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span>Sponsorship Requirement Published to 1,200+ Event Organisers!</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleCreateSponsorRfp} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Field 1: Title */}
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      Requirement Title / Campaign Theme <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Title Sponsorship for College Tech Fests & Esports Arenas"
+                      value={rfpForm.title}
+                      onChange={(e) => setRfpForm({ ...rfpForm, title: e.target.value })}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field 2: Industry */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Brand Industry / Sector</label>
+                    <select
+                      value={rfpForm.industry}
+                      onChange={(e) => setRfpForm({ ...rfpForm, industry: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    >
+                      <option value="Consumer Electronics & Audio">Consumer Electronics & Audio</option>
+                      <option value="Energy Drinks & Beverage">Energy Drinks & Beverage</option>
+                      <option value="Fintech & Banking">Fintech & Banking</option>
+                      <option value="EdTech & Learning">EdTech & Learning</option>
+                      <option value="Automotive & EV">Automotive & EV</option>
+                      <option value="Fashion & Streetwear">Fashion & Streetwear</option>
+                      <option value="FMCG & Quick Commerce">FMCG & Quick Commerce</option>
+                    </select>
+                  </div>
+
+                  {/* Field 3: Max Budget */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      Max Sponsorship Budget (₹) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                      <input
+                        type="number"
+                        value={rfpForm.budgetMax}
+                        onChange={(e) => setRfpForm({ ...rfpForm, budgetMax: Number(e.target.value) })}
+                        required
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Field 4: Min Footfall */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      Minimum Expected Footfall <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 5000"
+                      value={rfpForm.minFootfall}
+                      onChange={(e) => setRfpForm({ ...rfpForm, minFootfall: Number(e.target.value) })}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field 5: Target Cities */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Target Cities / Regions</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Mumbai, Bengaluru, Delhi-NCR, Thiruvananthapuram"
+                      value={rfpForm.targetCities}
+                      onChange={(e) => setRfpForm({ ...rfpForm, targetCities: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Field 6: Deadline */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Proposal Submission Deadline</label>
+                    <input
+                      type="date"
+                      value={rfpForm.deadline}
+                      onChange={(e) => setRfpForm({ ...rfpForm, deadline: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Field 7: Required Deliverables & Perks (Checkboxes) */}
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-bold text-slate-800 block">
+                    Mandatory Sponsor Perks & Activation Rights
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {[
+                      'Title / Powered-By Naming Rights',
+                      '10x10 On-Ground Sampling Stall',
+                      'Main Stage Backdrop & LED Banners',
+                      'Keynote / Presentation Slot (15m)',
+                      'VIP Passes & Networking Lounge',
+                      'Social Media Reel & Story Tags'
+                    ].map((perk) => {
+                      const isChecked = rfpForm.requiredPerks.includes(perk);
+                      return (
+                        <label
+                          key={perk}
+                          className={`flex items-center space-x-2 p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                            isChecked
+                              ? 'bg-amber-50 border-amber-300 text-amber-950 font-bold'
+                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setRfpForm({
+                                  ...rfpForm,
+                                  requiredPerks: rfpForm.requiredPerks.filter((p) => p !== perk)
+                                });
+                              } else {
+                                setRfpForm({
+                                  ...rfpForm,
+                                  requiredPerks: [...rfpForm.requiredPerks, perk]
+                                });
+                              }
+                            }}
+                            className="w-3.5 h-3.5 text-amber-600 rounded focus:ring-amber-500"
+                          />
+                          <span className="truncate">{perk}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Field 8: Brief & Activation Goals */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800">
+                    Sponsorship Brief & Activation Goals <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe your target attendee persona, experiential marketing expectations, product sampling details, QR code contests, etc."
+                    value={rfpForm.brief}
+                    onChange={(e) => setRfpForm({ ...rfpForm, brief: e.target.value })}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold rounded-xl text-xs shadow-md transition flex items-center space-x-2"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Publish Sponsor Requirement (RFP)</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Active Sponsor RFPs List */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-base">Active Brand Sponsorship RFPs</h4>
+                  <p className="text-xs text-slate-500">Corporate requirements currently receiving pitches from festival organizers</p>
+                </div>
+                <button
+                  onClick={() => navigate('/sponsor-requirements')}
+                  className="text-xs text-amber-800 font-bold hover:underline"
+                >
+                  View Public RFP Feed →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sponsorRfps.map((rfp) => (
+                  <div
+                    key={rfp.id}
+                    className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 hover:border-amber-300 transition"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={rfp.sponsorLogo}
+                          alt=""
+                          className="w-11 h-11 rounded-xl object-cover ring-2 ring-slate-100"
+                        />
+                        <div>
+                          <h4 className="font-extrabold text-slate-900 text-sm">{rfp.title}</h4>
+                          <p className="text-slate-500 text-xs">{rfp.sponsorName} • {rfp.brandIndustry}</p>
+                        </div>
+                      </div>
+
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {rfp.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 line-clamp-2">{rfp.brief}</p>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-2 px-3 bg-slate-50 rounded-xl text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">Max Budget</span>
+                        <strong className="text-slate-900 text-xs font-black">{formatCurrency(rfp.budgetMax)}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">Min Footfall</span>
+                        <strong className="text-indigo-700 text-xs font-extrabold">{rfp.minFootfall.toLocaleString()}+</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-bold uppercase">Pitches</span>
+                        <strong className="text-emerald-700 text-xs font-extrabold">{rfp.proposalsCount} Received</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold mr-1">Perks:</span>
+                      {rfp.requiredPerks.map((perk, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-900 font-semibold border border-amber-200/60">
+                          {perk}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-500 text-[11px]">📍 {rfp.targetLocations.join(', ')}</span>
+                      <button
+                        onClick={() => alert(`Reviewing ${rfp.proposalsCount} proposals for ${rfp.title}. Escrow funding is ready.`)}
+                        className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition shadow-xs"
+                      >
+                        Review Pitches & Fund
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SPONSOR TAB 2: FOOTFALL & ROI VERIFICATION TRACKER */}
+        {activeTab === 'sponsor-roi' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    <span>Sponsorship Footfall & ROI Telemetry Tracker</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Audited physical attendance counts, stage banner photo proofs, and direct QR lead attribution.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Independent Platform Audit Active</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* KPI Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Verified Footfall</span>
+                  <span className="text-2xl font-black text-slate-900 block">18,400</span>
+                  <span className="text-[10px] text-emerald-600 font-bold block">✓ Turnstile & RFID count</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Digital Reach</span>
+                  <span className="text-2xl font-black text-indigo-700 block">94,200</span>
+                  <span className="text-[10px] text-slate-500 block">Official fest live streams & reels</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Stall QR Conversions</span>
+                  <span className="text-2xl font-black text-amber-500 block">1,840</span>
+                  <span className="text-[10px] text-slate-500 block">App downloads / free samples</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Effective CPL</span>
+                  <span className="text-2xl font-black text-emerald-600 block">₹ 4.12</span>
+                  <span className="text-[10px] text-emerald-700 font-semibold block">72% cheaper than Google Ads</span>
+                </div>
+              </div>
+
+              {/* Photo Proof Gallery */}
+              <div className="space-y-3 pt-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Organiser-Submitted Deliverable Proofs (Stage & Booth)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                    <img
+                      src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=600&q=80"
+                      alt=""
+                      className="w-full h-36 object-cover"
+                    />
+                    <div className="p-3 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-900">Main Stage LED Backdrop</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Verified</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">IIT Bombay Mood Indigo 2026 • 8,500 Audience</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                    <img
+                      src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=600&q=80"
+                      alt=""
+                      className="w-full h-36 object-cover"
+                    />
+                    <div className="p-3 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-900">10x10 Sampling Stall Setup</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Verified</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">Bengaluru Tech Summit • 1,200 samples served</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+                    <img
+                      src="https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=600&q=80"
+                      alt=""
+                      className="w-full h-36 object-cover"
+                    />
+                    <div className="p-3 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-slate-900">Keynote Presentation Slot</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Verified</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">National FinTech Conclave • Speaker on stage</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BRAND TAB: LOCAL ADS & COLLECTIVES TRACKER */}
+        {activeTab === 'local-collective' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                    <MapPin className="w-5 h-5 text-indigo-600" />
+                    <span>Hyperlocal Advertising & Creator Collective Campaigns</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Track combined reach from city theme pages, regional food collectives, and local radio networks.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => navigate('/local-ads')}
+                    className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition"
+                  >
+                    + Book City Ad Channels
+                  </button>
+                  <button
+                    onClick={() => navigate('/collectives')}
+                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-xs"
+                  >
+                    + Book Creator Collective
+                  </button>
+                </div>
+              </div>
+
+              {/* Local Ad Bookings */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Active Hyperlocal Advertising Orders
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-slate-900">Thiruvananthapuram Restaurant Launch Bundle</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                        In Flight
+                      </span>
+                    </div>
+                    <p className="text-slate-600">5 Local Food Creators & Regional Instagram Pages</p>
+                    <div className="flex justify-between text-slate-500 pt-2 border-t border-slate-200 text-[11px]">
+                      <span>Budget: <strong>₹ 10,000</strong></span>
+                      <span>Target City: <strong>Thiruvananthapuram</strong></span>
+                      <span>Estimated Reach: <strong>165,000</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-slate-900">Bengaluru Tech Guild Collective</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                        Content Review
+                      </span>
+                    </div>
+                    <p className="text-slate-600">Combined Package: 5 Top Bengaluru Developers & AI Creators</p>
+                    <div className="flex justify-between text-slate-500 pt-2 border-t border-slate-200 text-[11px]">
+                      <span>Package Price: <strong>₹ 35,000</strong></span>
+                      <span>Combined Reach: <strong>680,000</strong></span>
+                      <span>Deliverables: <strong>5x LinkedIn + 5x Reels</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TAB 1: DEAL ROOMS & APPROVALS */}
         {activeTab === 'deals' && (
@@ -1014,7 +1815,134 @@ export const DashboardPage: React.FC = () => {
 
         {/* BUSINESS TAB: CAMPAIGN MANAGER */}
         {(role === 'business' || role === 'agency') && activeTab === 'campaigns' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Quick Campaign Creator Form Card (Text Fields) */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-full">
+                      Brand Campaign Builder
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">• Fast Direct Publish</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1">Post a New Brand Campaign Brief</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Launch a promotional brief for verified creators and influencers with escrow budget protection.
+                  </p>
+                </div>
+
+                {quickCampaignSuccessMsg && (
+                  <div className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold animate-fadeIn">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span>Campaign Brief Published Live to Creators!</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleCreateQuickCampaign} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Campaign Title */}
+                  <div className="sm:col-span-2 space-y-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      Campaign Title <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Summer Skincare Launch: 60s Unboxing & Honest Review"
+                      value={quickCampaignForm.title}
+                      onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, title: e.target.value })}
+                      required
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Product / Industry Category</label>
+                    <select
+                      value={quickCampaignForm.category}
+                      onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, category: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    >
+                      <option value="Fashion & Style">Fashion & Style</option>
+                      <option value="Beauty & Wellness">Beauty & Wellness</option>
+                      <option value="Tech & Gadgets">Tech & Gadgets</option>
+                      <option value="Food & Beverage">Food & Beverage</option>
+                      <option value="Fitness & Health">Fitness & Health</option>
+                      <option value="Travel & Hospitality">Travel & Hospitality</option>
+                      <option value="Finance & Crypto">Finance & Crypto</option>
+                    </select>
+                  </div>
+
+                  {/* Deliverables */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Required Deliverables</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 1x Instagram Reel, 2x Stories with Link"
+                      value={quickCampaignForm.deliverables}
+                      onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, deliverables: e.target.value })}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Budget Min */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Budget Per Creator (Min ₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                      <input
+                        type="number"
+                        value={quickCampaignForm.budgetMin}
+                        onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, budgetMin: Number(e.target.value) })}
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Budget Max */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800">Total Campaign Budget (Max ₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">₹</span>
+                      <input
+                        type="number"
+                        value={quickCampaignForm.budgetMax}
+                        onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, budgetMax: Number(e.target.value) })}
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brief & Instructions */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800">
+                    Campaign Brief & Content Guidelines <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Specify the product features, hook style, required talking points, discount promo code to mention, and brand @tagging."
+                    value={quickCampaignForm.description}
+                    onChange={(e) => setQuickCampaignForm({ ...quickCampaignForm, description: e.target.value })}
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs shadow-md transition flex items-center space-x-2"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Publish Campaign Brief</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-slate-900 text-base">Your Active Brand Campaigns</h3>
@@ -1022,10 +1950,10 @@ export const DashboardPage: React.FC = () => {
               </div>
               <button
                 onClick={() => navigate('/create-campaign')}
-                className="flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>New Campaign</span>
+                <span>Advanced Campaign Wizard</span>
               </button>
             </div>
 

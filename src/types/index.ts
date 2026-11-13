@@ -442,3 +442,23 @@ export interface PerformanceAttribution {
   creatorReportedScreenshots: string[];
 }
 
+export interface SponsorRequirementRFP {
+  id: string;
+  sponsorId: string;
+  sponsorName: string;
+  sponsorLogo: string;
+  brandIndustry: string;
+  title: string;
+  targetEventTypes: string[];
+  budgetMin: number;
+  budgetMax: number;
+  minFootfall: number;
+  requiredPerks: string[];
+  targetLocations: string[];
+  brief: string;
+  status: 'open' | 'negotiating' | 'allocated' | 'closed';
+  proposalsCount: number;
+  createdAt: string;
+  deadline: string;
+}
+
