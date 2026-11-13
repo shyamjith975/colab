@@ -9,7 +9,14 @@ import {
   Review,
   Transaction,
   PlatformSettings,
-  UserProfile
+  UserProfile,
+  LocalAdChannel,
+  CreatorCollective,
+  AffiliateProgram,
+  CreatorAffiliateLink,
+  BookingSlot,
+  PerformanceAttribution,
+  ProfessionalSubProfile
 } from '../types';
 
 export const INITIAL_SETTINGS: PlatformSettings = {
@@ -50,7 +57,70 @@ export const DEMO_USERS: UserProfile[] = [
     bio: 'Fashion, beauty and lifestyle content creator based in Mumbai. Passionate about sustainable fashion.',
     location: 'Mumbai, Maharashtra',
     verified: true,
-    createdAt: '2025-01-10T00:00:00Z'
+    createdAt: '2025-01-10T00:00:00Z',
+    activeSubProfileId: 'sub-influencer-1',
+    subProfiles: [
+      {
+        id: 'sub-influencer-1',
+        type: 'influencer',
+        title: 'Fashion & Sustainable Lifestyle Influencer',
+        bio: 'Creating high-aesthetic reels and styling tips for sustainable fashion labels. 120k+ Instagram followers.',
+        skills: ['Reel Direction', 'Lookbook Curation', 'Brand Storytelling', 'Voiceover'],
+        location: 'Mumbai, Maharashtra',
+        languages: ['English', 'Hindi'],
+        startingRate: 4500,
+        portfolio: [
+          { title: 'Summer Linen Capsule', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80', type: 'Reel' },
+          { title: 'Festive Drape Tutorial', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80', type: 'Video' }
+        ],
+        verifiedCredentials: ['Meta Verified Partner', 'ASCI Compliance Certified'],
+        isAvailable: true,
+        rateCards: [
+          { format: 'Instagram Reel (60s)', price: 4500, turnaroundDays: 3 },
+          { format: 'Instagram Story (3x with Link)', price: 1500, turnaroundDays: 1 },
+          { format: 'Meta Spark Ad Licensing (30d)', price: 2500, turnaroundDays: 1 }
+        ]
+      },
+      {
+        id: 'sub-ugc-1',
+        type: 'ugc_creator',
+        title: 'Organic UGC Creator & Product Unboxer',
+        bio: 'Raw, relatable face-to-camera testimonials and aesthetic product unboxing for D2C ad creatives. No brand handle tagging required.',
+        skills: ['Relatable Hook Scripting', 'Natural Lighting UGC', 'Macro Texture B-Roll', 'CapCut Editing'],
+        location: 'Mumbai, Maharashtra',
+        languages: ['English', 'Hindi'],
+        startingRate: 3000,
+        portfolio: [
+          { title: '30s D2C Skincare Honest Review', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80', type: 'UGC Video' },
+          { title: 'Eco Detergent Demo & Stain Test', image: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=600&q=80', type: 'Demo' }
+        ],
+        verifiedCredentials: ['Ad Creative Performance Certified'],
+        isAvailable: true,
+        rateCards: [
+          { format: 'Raw UGC Video (30-60s)', price: 3000, turnaroundDays: 2 },
+          { format: 'UGC Video + 3 Hooks Variations', price: 4200, turnaroundDays: 3 }
+        ]
+      },
+      {
+        id: 'sub-stylist-1',
+        type: 'stylist',
+        title: 'Commercial Wardrobe Stylist & Art Director',
+        bio: 'Available for half-day & full-day studio campaign shoots, lookbook curation, and model draping.',
+        skills: ['Lookbook Draping', 'Color Palette Harmony', 'Prop Sourcing', 'Studio Direction'],
+        location: 'Mumbai, Maharashtra',
+        languages: ['English', 'Hindi'],
+        startingRate: 8000,
+        portfolio: [
+          { title: 'Autumn/Winter Lookbook Shoot', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=600&q=80', type: 'Editorial' }
+        ],
+        verifiedCredentials: ['NIFT Styling Masterclass'],
+        isAvailable: true,
+        rateCards: [
+          { format: 'Half-Day Shoot Styling (4 hrs)', price: 8000, turnaroundDays: 1 },
+          { format: 'Full-Day Commercial Shoot (8 hrs)', price: 14000, turnaroundDays: 1 }
+        ]
+      }
+    ]
   },
   {
     id: 'user-creator-2',
@@ -2715,6 +2785,382 @@ export const TRANSACTIONS: Transaction[] = [
     paymentMethod: 'UPI',
     invoiceNumber: 'INV-2026-10-0044',
     createdAt: '2026-10-28T14:15:00Z'
+  }
+];
+
+// 6. LOCAL ADVERTISING NETWORK CHANNELS & PROMOTIONAL PACKAGES
+export const LOCAL_AD_CHANNELS: LocalAdChannel[] = [
+  {
+    id: 'local-tvm-1',
+    name: 'Trivandrum Foodies Guide',
+    type: 'theme_page',
+    city: 'Thiruvananthapuram',
+    area: 'Kowdiar & Palayam',
+    handle: '@trivandrum.foodies',
+    platform: 'Instagram',
+    reach: 78000,
+    price: 2000,
+    turnaroundDays: 2,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+    category: 'Food & Beverage',
+    description: 'Premier culinary discovery page for foodies, family diners, and cafe hoppers in Trivandrum.'
+  },
+  {
+    id: 'local-tvm-2',
+    name: 'Chef Anand Varma',
+    type: 'influencer',
+    city: 'Thiruvananthapuram',
+    area: 'Kazhakkoottam & Technopark',
+    handle: '@chefanand_tvm',
+    platform: 'Instagram',
+    reach: 62000,
+    price: 2500,
+    turnaroundDays: 3,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=400&q=80',
+    category: 'Food & Beverage',
+    description: 'Executive chef and local food creator testing authentic Kerala delicacies and trending cafes.'
+  },
+  {
+    id: 'local-tvm-3',
+    name: 'Trivandrum Buzz & Events',
+    type: 'community_page',
+    city: 'Thiruvananthapuram',
+    area: 'Citywide',
+    handle: '@tvm_buzz',
+    platform: 'Instagram',
+    reach: 54000,
+    price: 1500,
+    turnaroundDays: 1,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=400&q=80',
+    category: 'Events & Lifestyle',
+    description: 'Weekend events, store openings, restaurant debuts, and cultural happenings in Thiruvananthapuram.'
+  },
+  {
+    id: 'local-tvm-4',
+    name: 'Kerala Food Trails TVM',
+    type: 'youtube_channel',
+    city: 'Thiruvananthapuram',
+    area: 'East Fort & Karamana',
+    handle: 'Kerala Food Trails',
+    platform: 'YouTube',
+    reach: 89000,
+    price: 2500,
+    turnaroundDays: 3,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
+    category: 'Food & Beverage',
+    description: 'Dedicated YouTube street food and family dining channel with loyal family viewership across South Kerala.'
+  },
+  {
+    id: 'local-tvm-5',
+    name: 'Trivandrum Lifestyle & Boutique Diary',
+    type: 'community_page',
+    city: 'Thiruvananthapuram',
+    area: 'Vellayambalam',
+    handle: '@tvm_style_diaries',
+    platform: 'Instagram',
+    reach: 42000,
+    price: 1500,
+    turnaroundDays: 2,
+    verified: false,
+    avatar: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=400&q=80',
+    category: 'Fashion & Style',
+    description: 'Spotlighting local boutiques, artisanal handlooms, salons, and jewellery pop-ups in the capital city.'
+  },
+  {
+    id: 'local-koc-1',
+    name: 'Kochi Buzz & Nightlife',
+    type: 'theme_page',
+    city: 'Kochi',
+    area: 'Panampilly Nagar & Fort Kochi',
+    handle: '@kochi_buzz',
+    platform: 'Instagram',
+    reach: 125000,
+    price: 3000,
+    turnaroundDays: 2,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80',
+    category: 'Food & Beverage',
+    description: 'Urban youth culture, specialty roasteries, and bistro guides in Kochi.'
+  },
+  {
+    id: 'local-blr-1',
+    name: 'Bangalore Food Walks',
+    type: 'influencer',
+    city: 'Bengaluru',
+    area: 'Indiranagar & Koramangala',
+    handle: '@blr_foodwalks',
+    platform: 'Instagram',
+    reach: 180000,
+    price: 4500,
+    turnaroundDays: 3,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    category: 'Food & Beverage',
+    description: 'Techies and young professionals food review page covering craft breweries and cafes.'
+  },
+  {
+    id: 'local-mum-1',
+    name: 'Bandra Bandstand Chronicles',
+    type: 'community_page',
+    city: 'Mumbai',
+    area: 'Bandra & Khar',
+    handle: '@bandra_buzz',
+    platform: 'Instagram',
+    reach: 140000,
+    price: 4000,
+    turnaroundDays: 2,
+    verified: true,
+    avatar: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=400&q=80',
+    category: 'Events & Lifestyle',
+    description: 'Hyperlocal community publication and boutique marketing hub for suburban Mumbai.'
+  }
+];
+
+// 10. CREATOR COLLECTIVES (MULTI-CREATOR BUNDLE PACKAGES)
+export const CREATOR_COLLECTIVES: CreatorCollective[] = [
+  {
+    id: 'collective-kerala-food',
+    title: 'Kerala Foodies Collective (10 Creators)',
+    region: 'Kerala',
+    city: 'Thiruvananthapuram & Kochi',
+    category: 'Food & Beverage',
+    memberCount: 10,
+    combinedFollowers: 850000,
+    combinedReach: 1400000,
+    bundlePrice: 25000,
+    description: 'Ten top food influencers, culinary vloggers, and cafe reviewers across Kerala offer a single unified promotional blitz. Instead of negotiating with 10 individuals, book 1 collective campaign that delivers 10 Reels and 20 Stories within 7 days.',
+    coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+    deliverables: [
+      '10 Dedicated In-Store / Recipe Reels (1 per creator)',
+      '20 High-engagement Story sets with Google Maps location sticker',
+      'Joint Instagram Guide inclusion: "Must-Visit Dining Spots in Kerala"',
+      'Raw footage repository provided for brand Meta Ad rights'
+    ],
+    members: [
+      { id: 'm1', name: 'Chef Anand Varma', handle: '@chefanand_tvm', avatar: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80', followers: '62K', role: 'Executive Chef' },
+      { id: 'm2', name: 'Priya Nair', handle: '@priyacooksdelhi', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80', followers: '185K', role: 'Regional Cuisine Lead' },
+      { id: 'm3', name: 'Naveen George', handle: '@kochi_bites', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', followers: '95K', role: 'Cafe Reviewer' },
+      { id: 'm4', name: 'Deepa Menon', handle: '@malabar_spice', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', followers: '110K', role: 'Traditional Food Historian' },
+      { id: 'm5', name: 'Arun Kumar', handle: '@tvm_foodwalks', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80', followers: '78K', role: 'Street Food Explorer' },
+      { id: 'm6', name: 'Reshma S.', handle: '@kerala_baking_co', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80', followers: '84K', role: 'Dessert & Bakery Specialist' },
+      { id: 'm7', name: 'Fahad Mohammed', handle: '@calicut_eats', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80', followers: '92K', role: 'Malabar Meat & Biryani Vlogger' },
+      { id: 'm8', name: 'Anjana Krishnan', handle: '@trivandrum_food_queen', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80', followers: '68K', role: 'Family Diner Reviewer' },
+      { id: 'm9', name: 'Siddharth M.', handle: '@kerala_tiffin_tales', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80', followers: '55K', role: 'Breakfast & Tea Stall Scout' },
+      { id: 'm10', name: 'Sneha Philip', handle: '@kochi_coffee_crawl', avatar: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=200&q=80', followers: '45K', role: 'Artisanal Roastery Reviewer' }
+    ]
+  },
+  {
+    id: 'collective-blr-tech',
+    title: 'Bengaluru Tech & Gadget Guild (6 Creators)',
+    region: 'Karnataka',
+    city: 'Bengaluru',
+    category: 'Tech & Gadgets',
+    memberCount: 6,
+    combinedFollowers: 720000,
+    combinedReach: 1100000,
+    bundlePrice: 35000,
+    description: 'Six software engineers and hardware reviewers in Bangalore delivering comprehensive benchmark reviews, developer productivity setups, and unboxing videos.',
+    coverImage: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+    deliverables: [
+      '6 Detailed YouTube / Reel Benchmark Reviews',
+      '6 Dedicated LinkedIn Product Posts reaching 150k+ tech founders',
+      'Community Discord announcement in 4 developer servers'
+    ],
+    members: [
+      { id: 't1', name: 'Rohit Verma', handle: '@rohit_tech', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80', followers: '250K', role: 'Flagship Hardware Reviewer' },
+      { id: 't2', name: 'Karthik Rao', handle: '@dev_setups_in', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80', followers: '120K', role: 'Desk Setup & Peripherals' },
+      { id: 't3', name: 'Aakash Mehta', handle: '@code_and_gadgets', avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=200&q=80', followers: '98K', role: 'Developer Audio & ANC' }
+    ]
+  },
+  {
+    id: 'collective-delhi-fashion',
+    title: 'Delhi Campus Trendsetters (8 Creators)',
+    region: 'Delhi NCR',
+    city: 'New Delhi',
+    category: 'Fashion & Style',
+    memberCount: 8,
+    combinedFollowers: 950000,
+    combinedReach: 1500000,
+    bundlePrice: 28000,
+    description: 'Eight DU and NIFT fashion influencers dominating North Campus and South Ex styling trends. Perfect for gen-z streetwear and sustainable accessories.',
+    coverImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80',
+    deliverables: [
+      '8 Street-style OOTD styling reels',
+      '16 Campus lookbook stories with discount links'
+    ],
+    members: [
+      { id: 'f1', name: 'Simran Chadha', handle: '@simran_delhistyle', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', followers: '145K', role: 'Streetwear Lead' },
+      { id: 'f2', name: 'Aman Deep', handle: '@aman_drapes', avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80', followers: '88K', role: 'Ethnic Menswear' }
+    ]
+  }
+];
+
+// 11. AFFILIATE & PERFORMANCE MARKETPLACE PROGRAMS
+export const AFFILIATE_PROGRAMS: AffiliateProgram[] = [
+  {
+    id: 'aff-prog-1',
+    brandName: 'NutriBlend Superfoods',
+    brandLogo: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80',
+    productName: '100% Organic Plant Protein & Daily Greens (1kg)',
+    category: 'Fitness & Health',
+    price: 2499,
+    commissionType: 'percentage',
+    commissionRate: 18, // 18% = ₹450 per order
+    avgEarningsPerClick: 24.50,
+    cookieDurationDays: 30,
+    productImage: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
+    description: 'Cold-pressed pea and brown rice protein with zero artificial sweeteners. Highest re-order rate in India. Creators earn 18% on all first-time and repeat customer orders.',
+    affiliateCount: 64,
+    totalPaidOut: 385000,
+    productUrl: 'https://nutriblend.example.com/protein'
+  },
+  {
+    id: 'aff-prog-2',
+    brandName: 'Aroma Threads Boutique',
+    brandLogo: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=200&q=80',
+    productName: 'Handloom Cotton Pastel Midi Dress & Co-ord Sets',
+    category: 'Fashion & Style',
+    price: 3200,
+    commissionType: 'percentage',
+    commissionRate: 15, // 15% = ₹480 per dress
+    avgEarningsPerClick: 32.00,
+    cookieDurationDays: 45,
+    productImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80',
+    description: 'Artisanal organic cotton summer wear crafted by Kerala weavers. Generates high conversion via Instagram story links and bio stickers.',
+    affiliateCount: 42,
+    totalPaidOut: 240000,
+    productUrl: 'https://aromathreads.example.com/festive'
+  },
+  {
+    id: 'aff-prog-3',
+    brandName: 'UrbanGlow Skincare',
+    brandLogo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=200&q=80',
+    productName: 'Invisible Zinc Matte Gel Sunscreen SPF 50+ PA++++',
+    category: 'Beauty & Skincare',
+    price: 799,
+    commissionType: 'percentage',
+    commissionRate: 20, // 20% = ₹160 per tube
+    avgEarningsPerClick: 19.20,
+    cookieDurationDays: 30,
+    productImage: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
+    description: 'Dermatologist formulated zero white-cast daily sunscreen. Viral hit across beauty creators and dermatology vloggers.',
+    affiliateCount: 88,
+    totalPaidOut: 512000,
+    productUrl: 'https://urbanglow.example.com/sunscreen'
+  },
+  {
+    id: 'aff-prog-4',
+    brandName: 'BoltAudio Acoustics',
+    brandLogo: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80',
+    productName: 'Bolt Pro ANC Hybrid Active Noise Cancelling Earbuds',
+    category: 'Tech & Gadgets',
+    price: 4999,
+    commissionType: 'flat',
+    commissionRate: 600, // ₹600 Flat per unit sold
+    avgEarningsPerClick: 28.50,
+    cookieDurationDays: 60,
+    productImage: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=600&q=80',
+    description: 'Audiophile grade 40dB noise cancellation with 38h battery life. Dedicated coupon codes with 10% customer discount provided.',
+    affiliateCount: 52,
+    totalPaidOut: 420000,
+    productUrl: 'https://boltaudio.example.com/anc'
+  }
+];
+
+export const CREATOR_AFFILIATE_LINKS: CreatorAffiliateLink[] = [
+  {
+    id: 'link-101',
+    programId: 'aff-prog-2',
+    creatorId: 'user-creator-1',
+    referralCode: 'ANANYA15',
+    referralUrl: 'https://colab.market/aff/aroma/ANANYA15',
+    couponCode: 'ANANYA15',
+    clicks: 640,
+    conversions: 45,
+    earnedAmount: 14250,
+    status: 'active'
+  },
+  {
+    id: 'link-102',
+    programId: 'aff-prog-4',
+    creatorId: 'user-creator-2',
+    referralCode: 'ROHITTECH10',
+    referralUrl: 'https://colab.market/aff/bolt/ROHITTECH10',
+    couponCode: 'ROHIT10',
+    clicks: 420,
+    conversions: 28,
+    earnedAmount: 16800,
+    status: 'active'
+  }
+];
+
+// 5. BOOKING & AVAILABILITY SYSTEM (CONSULTATION & DIRECT SERVICE SLOTS)
+export const BOOKING_SLOTS: BookingSlot[] = [
+  {
+    id: 'slot-1',
+    creatorId: 'user-creator-1',
+    creatorName: 'Ananya Sharma',
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    serviceTitle: '1-on-1 Sustainable Fashion & Brand Styling Strategy',
+    serviceType: 'consultation',
+    date: '2026-11-20',
+    timeSlot: '11:00 AM - 12:00 PM',
+    durationMinutes: 60,
+    price: 2500,
+    status: 'available'
+  },
+  {
+    id: 'slot-2',
+    creatorId: 'user-creator-1',
+    creatorName: 'Ananya Sharma',
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    serviceTitle: 'Half-Day In-Person Store Visit & Draping Showcase',
+    serviceType: 'store_shoot',
+    date: '2026-11-22',
+    timeSlot: '02:00 PM - 06:00 PM',
+    durationMinutes: 240,
+    price: 8500,
+    status: 'available'
+  },
+  {
+    id: 'slot-3',
+    creatorId: 'user-creator-2',
+    creatorName: 'Rohit Verma',
+    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    serviceTitle: 'Tech Product Architecture & Launch Strategy Consultation',
+    serviceType: 'consultation',
+    date: '2026-11-21',
+    timeSlot: '04:00 PM - 05:00 PM',
+    durationMinutes: 60,
+    price: 3500,
+    status: 'available'
+  }
+];
+
+// 4. CAMPAIGN TRACKING & PROOF OF PERFORMANCE TELEMETRY
+export const PERFORMANCE_ATTRIBUTIONS: PerformanceAttribution[] = [
+  {
+    id: 'attr-101',
+    collaborationId: 'collab-101',
+    campaignTitle: 'Spring Pastel Handloom Collection Launch',
+    trackableLink: 'https://colab.market/r/aroma-spring-ananya',
+    qrCodeUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://colab.market/r/aroma-spring-ananya',
+    couponCode: 'ANANYA15',
+    views: 48500,
+    clicks: 1420,
+    enquiries: 84,
+    couponRedemptions: 42,
+    attributedSales: 52800,
+    cpl: 41.60,
+    roi: 3.8,
+    verifiedPlatformData: true,
+    creatorReportedScreenshots: [
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80'
+    ]
   }
 ];
 

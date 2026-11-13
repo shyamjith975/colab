@@ -81,17 +81,22 @@ export const Navbar: React.FC = () => {
   const desktopNavTabs: NavItem[] = [
     { label: 'Creators', path: '/creators' },
     { label: 'Campaigns', path: '/campaigns' },
+    { label: 'Local Ads', path: '/local-ads' },
+    { label: 'Collectives', path: '/collectives' },
+    { label: 'Affiliates', path: '/affiliates' },
     { label: 'Sponsorships', path: '/sponsorships' },
     { label: 'UGC Pros', path: '/ugc-pros' },
     { label: 'Ad Spaces', path: '/ad-spaces' },
-    { label: 'AI Match', path: '/ai-tools', badge: 'AI' },
-    { label: 'Pricing', path: '/pricing' }
+    { label: 'AI Match', path: '/ai-tools', badge: 'AI' }
   ];
 
   // Full options specifically for mobile view
   const mobileNavLinks: NavItem[] = [
     { label: 'Discover Creators', path: '/creators', icon: '🎨' },
     { label: 'Brand Campaigns', path: '/campaigns', icon: '📢' },
+    { label: 'Local Ads Network', path: '/local-ads', icon: '📍', badge: 'City' },
+    { label: 'Creator Collectives', path: '/collectives', icon: '👥', badge: 'Bundle' },
+    { label: 'Affiliate Marketplace', path: '/affiliates', icon: '💰', badge: 'Recurring' },
     { label: 'Sponsorships & Events', path: '/sponsorships', icon: '🎪' },
     { label: 'UGC & Creative Pros', path: '/ugc-pros', icon: '🎬' },
     { label: 'Ad Space Inventory', path: '/ad-spaces', icon: '📰' },

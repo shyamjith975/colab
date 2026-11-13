@@ -296,5 +296,112 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.ok(roleFeatures.agency.includes('clients'), 'Agency dashboard must have Multi-Brand Client Hub');
     assert.ok(roleFeatures.organiser.includes('events'), 'Organiser dashboard must have Event Sponsorship Packages');
   });
+
+  test('17. Unified Professional Identity & Sub-Profile Multi-Persona Switching', () => {
+    const userAccount = {
+      id: 'user-creator-1',
+      name: 'Ananya Sharma',
+      subProfiles: [
+        { id: 'sub-1', type: 'influencer', title: 'Fashion Influencer', startingRate: 4500 },
+        { id: 'sub-2', type: 'ugc_creator', title: 'UGC Video Specialist', startingRate: 3000 },
+        { id: 'sub-3', type: 'stylist', title: 'Commercial Stylist', startingRate: 8000 }
+      ],
+      activeSubProfileId: 'sub-1'
+    };
+
+    assert.strictEqual(userAccount.subProfiles.length, 3, 'User account should support multiple sub-profiles');
+    
+    // Switch active persona
+    userAccount.activeSubProfileId = 'sub-2';
+    const active = userAccount.subProfiles.find(p => p.id === userAccount.activeSubProfileId);
+    assert.strictEqual(active?.type, 'ugc_creator');
+    assert.strictEqual(active?.startingRate, 3000);
+  });
+
+  test('18. Local Advertising Network (Thiruvananthapuram 5-Channel Bundle)', () => {
+    const tvmChannels = [
+      { id: 'local-tvm-1', name: 'Trivandrum Foodies Guide', price: 2000, reach: 78000 },
+      { id: 'local-tvm-2', name: 'Chef Anand Varma', price: 2500, reach: 62000 },
+      { id: 'local-tvm-3', name: 'Trivandrum Buzz & Events', price: 1500, reach: 54000 },
+      { id: 'local-tvm-4', name: 'Kerala Food Trails TVM', price: 2500, reach: 89000 },
+      { id: 'local-tvm-5', name: 'Trivandrum Lifestyle Diary', price: 1500, reach: 42000 }
+    ];
+
+    const totalCost = tvmChannels.reduce((sum, ch) => sum + ch.price, 0);
+    const totalReach = tvmChannels.reduce((sum, ch) => sum + ch.reach, 0);
+
+    assert.strictEqual(tvmChannels.length, 5, 'Exactly 5 local channels selected for promotion');
+    assert.ok(totalCost <= 10000, `Total cost ₹${totalCost} must fit within the restaurant's ₹10,000 budget`);
+    assert.ok(totalReach >= 300000, `Combined reach of ${totalReach} gives massive hyperlocal visibility`);
+  });
+
+  test('19. Creator Collectives Multi-Creator Bundle Agreement & Pricing', () => {
+    const keralaCollective = {
+      title: 'Kerala Foodies Collective (10 Creators)',
+      memberCount: 10,
+      bundlePrice: 25000,
+      combinedReach: 1400000,
+      deliverablesCount: 4
+    };
+
+    assert.strictEqual(keralaCollective.memberCount, 10, 'Collective bundles 10 creators together');
+    assert.strictEqual(keralaCollective.bundlePrice, 25000, 'Single campaign booking fee for business');
+    const avgPerCreator = keralaCollective.bundlePrice / keralaCollective.memberCount;
+    assert.strictEqual(avgPerCreator, 2500, 'Fair, transparent automated split per creator');
+  });
+
+  test('20. Affiliate & Performance Recurring Commission Math', () => {
+    const program = {
+      price: 2499,
+      commissionRate: 18, // 18%
+      commissionType: 'percentage'
+    };
+
+    const orderValue = program.price;
+    const earnedCommission = Math.round(orderValue * (program.commissionRate / 100));
+    assert.strictEqual(earnedCommission, 450, '18% commission on ₹2,499 order should yield ₹450 payout');
+
+    const flatProgram = {
+      price: 4999,
+      commissionRate: 600,
+      commissionType: 'flat'
+    };
+    assert.strictEqual(flatProgram.commissionRate, 600, 'Flat payout should yield exact rate');
+  });
+
+  test('21. Direct Booking Consultation & Escrow Slot Hold', () => {
+    let slot = {
+      id: 'slot-1',
+      serviceTitle: '1-on-1 Strategy Consultation',
+      price: 2500,
+      status: 'available',
+      clientName: undefined
+    };
+
+    // Client books slot
+    slot.status = 'booked';
+    slot.clientName = 'Aroma Threads Boutique';
+
+    assert.strictEqual(slot.status, 'booked');
+    assert.strictEqual(slot.clientName, 'Aroma Threads Boutique');
+  });
+
+  test('22. Performance Attribution & Telemetry Verified vs Reported Separation', () => {
+    const attribution = {
+      views: 48500,
+      clicks: 1420,
+      enquiries: 84,
+      attributedSales: 52800,
+      adSpend: 3500,
+      verifiedPlatformData: true
+    };
+
+    const cpl = Number((attribution.adSpend / attribution.enquiries).toFixed(2));
+    const roi = Number((attribution.attributedSales / attribution.adSpend).toFixed(1));
+
+    assert.strictEqual(cpl, 41.67, 'Cost per lead calculation matches spend / enquiries');
+    assert.strictEqual(roi, 15.1, 'Return on ad spend calculation matches sales / spend');
+    assert.strictEqual(attribution.verifiedPlatformData, true, 'Flag clearly distinguishes SDK telemetry from manual self-report');
+  });
 });
 

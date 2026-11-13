@@ -17,7 +17,11 @@ import {
   X,
   Plus,
   Lock,
-  LogIn
+  LogIn,
+  Clock,
+  Check,
+  Tag,
+  DollarSign
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
@@ -33,7 +37,9 @@ export const CreatorProfilePage: React.FC = () => {
     setShowLoginModal,
     createOrGetConversation,
     campaigns,
-    applyToCampaign
+    applyToCampaign,
+    bookingSlots,
+    bookConsultationSlot
   } = useApp();
 
   const creator = creators.find((c) => c.id === id);
@@ -47,6 +53,15 @@ export const CreatorProfilePage: React.FC = () => {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState('');
   const [customProposalText, setCustomProposalText] = useState('');
+
+  // Booking Modal State
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string>('slot-1');
+  const [bookingClientName, setBookingClientName] = useState(currentUser?.name || 'Local Business');
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+
+  // Unified Professional Identity Sub-Profile State
+  const [activePersona, setActivePersona] = useState<'influencer' | 'ugc' | 'stylist'>('influencer');
 
   if (!creator) {
     return (
@@ -208,11 +223,56 @@ export const CreatorProfilePage: React.FC = () => {
                     {creator.category}
                   </span>
                 </div>
+
+                {/* 1. Unified Professional Identity: Persona Sub-Profile Switcher */}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-3">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Identity:</span>
+                  <button
+                    onClick={() => setActivePersona('influencer')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1 ${
+                      activePersona === 'influencer'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>🌟 Influencer (185k)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActivePersona('ugc')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1 ${
+                      activePersona === 'ugc'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>🎬 UGC Video Creator</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActivePersona('stylist')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition flex items-center space-x-1 ${
+                      activePersona === 'stylist'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span>👗 Stylist & Director</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* CTAs */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <button
+                onClick={() => setShowBookingModal(true)}
+                className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold transition shadow-xs"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Book Slot / Consultation</span>
+              </button>
+
               <button
                 onClick={handleStartMessage}
                 className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
@@ -226,7 +286,7 @@ export const CreatorProfilePage: React.FC = () => {
                 className="flex items-center space-x-1.5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-md shadow-indigo-200"
               >
                 <Send className="w-4 h-4" />
-                <span>Book / Invite</span>
+                <span>Collaborate</span>
               </button>
             </div>
           </div>
@@ -572,6 +632,127 @@ export const CreatorProfilePage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. DIRECT BOOKING & AVAILABILITY SYSTEM MODAL */}
+      {showBookingModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider block">Direct Booking Engine</span>
+                <h3 className="text-lg font-black text-slate-900">Book Service or Consultation with {creator.name}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowBookingModal(false);
+                  setBookingConfirmed(false);
+                }}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {bookingConfirmed ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center space-y-3">
+                <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto" />
+                <h4 className="font-extrabold text-emerald-900 text-base">Booking Confirmed & Escrow Secured!</h4>
+                <p className="text-xs text-emerald-700">
+                  Your appointment with {creator.name} has been booked. Calendar invite and deal room link have been dispatched.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowBookingModal(false);
+                    setBookingConfirmed(false);
+                  }}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1.5">
+                    Select Available Service / Date Slot:
+                  </label>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {bookingSlots.map((slot) => (
+                      <div
+                        key={slot.id}
+                        onClick={() => setSelectedSlotId(slot.id)}
+                        className={`p-3 rounded-2xl border cursor-pointer transition ${
+                          selectedSlotId === slot.id
+                            ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-100'
+                            : 'border-slate-200 bg-slate-50 hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-0.5">
+                            <span className="font-extrabold text-slate-900 text-xs block">{slot.serviceTitle}</span>
+                            <div className="flex items-center space-x-2 text-[11px] text-slate-500">
+                              <span className="flex items-center space-x-1">
+                                <Calendar className="w-3 h-3 text-slate-400" />
+                                <span>{slot.date}</span>
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                <span>{slot.timeSlot} ({slot.durationMinutes}m)</span>
+                              </span>
+                            </div>
+                          </div>
+                          <span className="font-black text-slate-900 text-sm">{formatCurrency(slot.price)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">
+                    Your Business / Brand Legal Name:
+                  </label>
+                  <input
+                    type="text"
+                    value={bookingClientName}
+                    onChange={(e) => setBookingClientName(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    placeholder="e.g. Aroma Threads Boutique"
+                  />
+                </div>
+
+                <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-[11px] text-amber-900 space-y-1">
+                  <span className="font-bold block">🛡️ Integrated Escrow Guarantee:</span>
+                  <p>
+                    Payment is held securely in platform escrow and will only be disbursed to {creator.name} after the scheduled consultation or deliverable shoot is completed.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBookingModal(false)}
+                    className="px-4 py-2 border border-slate-300 text-slate-600 rounded-xl font-semibold hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      bookConsultationSlot(selectedSlotId, bookingClientName);
+                      setBookingConfirmed(true);
+                    }}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-md transition"
+                  >
+                    Confirm Booking & Deposit Escrow
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

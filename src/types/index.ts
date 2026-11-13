@@ -1,5 +1,20 @@
 export type UserRole = 'creator' | 'business' | 'agency' | 'organiser' | 'sponsor' | 'admin';
 
+export interface ProfessionalSubProfile {
+  id: string;
+  type: 'influencer' | 'ugc_creator' | 'stylist' | 'photographer' | 'designer' | 'boutique_owner' | 'agency' | 'business';
+  title: string;
+  bio: string;
+  skills: string[];
+  location: string;
+  languages: string[];
+  startingRate: number;
+  portfolio: { title: string; image: string; type: string }[];
+  verifiedCredentials: string[];
+  isAvailable: boolean;
+  rateCards?: { format: string; price: number; turnaroundDays: number }[];
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -12,6 +27,8 @@ export interface UserProfile {
   verified: boolean;
   createdAt: string;
   agencyId?: string;
+  subProfiles?: ProfessionalSubProfile[];
+  activeSubProfileId?: string;
 }
 
 export interface SocialAccount {
@@ -319,5 +336,109 @@ export interface PlatformSettings {
   autoEscrowReleaseDays: number;
   categories: string[];
   maintenanceMode: boolean;
+}
+
+export interface BookingSlot {
+  id: string;
+  creatorId: string;
+  creatorName: string;
+  creatorAvatar: string;
+  serviceTitle: string;
+  serviceType: 'consultation' | 'store_shoot' | 'sponsored_video' | 'express_ugc';
+  date: string;
+  timeSlot: string;
+  durationMinutes: number;
+  price: number;
+  clientName?: string;
+  status: 'available' | 'booked' | 'completed';
+}
+
+export interface LocalAdChannel {
+  id: string;
+  name: string;
+  type: 'influencer' | 'theme_page' | 'youtube_channel' | 'community_page' | 'regional_media';
+  city: string;
+  area?: string;
+  handle: string;
+  platform: 'Instagram' | 'YouTube' | 'Facebook' | 'Local Media';
+  reach: number;
+  price: number;
+  turnaroundDays: number;
+  verified: boolean;
+  avatar: string;
+  category: string;
+  description: string;
+}
+
+export interface CreatorCollective {
+  id: string;
+  title: string;
+  region: string;
+  city: string;
+  category: string;
+  memberCount: number;
+  combinedFollowers: number;
+  combinedReach: number;
+  bundlePrice: number;
+  description: string;
+  coverImage: string;
+  deliverables: string[];
+  members: {
+    id: string;
+    name: string;
+    handle: string;
+    avatar: string;
+    followers: string;
+    role: string;
+  }[];
+}
+
+export interface AffiliateProgram {
+  id: string;
+  brandName: string;
+  brandLogo: string;
+  productName: string;
+  category: string;
+  price: number;
+  commissionType: 'percentage' | 'flat';
+  commissionRate: number; // e.g. 15 for 15%, or 300 for ₹300
+  avgEarningsPerClick: number; // EPC, e.g. ₹18.50
+  cookieDurationDays: number; // e.g. 30
+  productImage: string;
+  description: string;
+  affiliateCount: number;
+  totalPaidOut: number;
+  productUrl: string;
+}
+
+export interface CreatorAffiliateLink {
+  id: string;
+  programId: string;
+  creatorId: string;
+  referralCode: string;
+  referralUrl: string;
+  couponCode: string;
+  clicks: number;
+  conversions: number;
+  earnedAmount: number;
+  status: 'active' | 'pending';
+}
+
+export interface PerformanceAttribution {
+  id: string;
+  collaborationId: string;
+  campaignTitle: string;
+  trackableLink: string;
+  qrCodeUrl: string;
+  couponCode: string;
+  views: number;
+  clicks: number;
+  enquiries: number;
+  couponRedemptions: number;
+  attributedSales: number;
+  cpl: number;
+  roi: number;
+  verifiedPlatformData: boolean;
+  creatorReportedScreenshots: string[];
 }
 

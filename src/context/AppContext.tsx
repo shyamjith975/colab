@@ -15,7 +15,14 @@ import {
   Transaction,
   PlatformSettings,
   Message,
-  Conversation
+  Conversation,
+  LocalAdChannel,
+  CreatorCollective,
+  AffiliateProgram,
+  CreatorAffiliateLink,
+  BookingSlot,
+  PerformanceAttribution,
+  ProfessionalSubProfile
 } from '../types';
 import {
   DEMO_USERS,
@@ -28,7 +35,13 @@ import {
   COLLABORATIONS,
   REVIEWS,
   TRANSACTIONS,
-  INITIAL_SETTINGS
+  INITIAL_SETTINGS,
+  LOCAL_AD_CHANNELS,
+  CREATOR_COLLECTIVES,
+  AFFILIATE_PROGRAMS,
+  CREATOR_AFFILIATE_LINKS,
+  BOOKING_SLOTS,
+  PERFORMANCE_ATTRIBUTIONS
 } from '../data/mockData';
 
 interface AppContextType {
@@ -54,8 +67,21 @@ interface AppContextType {
   settings: PlatformSettings;
   conversations: Conversation[];
   messages: Message[];
+  localAdChannels: LocalAdChannel[];
+  creatorCollectives: CreatorCollective[];
+  affiliatePrograms: AffiliateProgram[];
+  creatorAffiliateLinks: CreatorAffiliateLink[];
+  bookingSlots: BookingSlot[];
+  performanceAttributions: PerformanceAttribution[];
   
   // Actions
+  switchSubProfile: (subProfileId: string) => void;
+  createOrUpdateSubProfile: (profile: ProfessionalSubProfile) => void;
+  bookConsultationSlot: (slotId: string, clientName: string) => void;
+  joinAffiliateProgram: (programId: string) => CreatorAffiliateLink;
+  simulateAffiliateOrder: (linkId: string, orderValue: number) => void;
+  bookLocalAdBundle: (channelIds: string[], campaignTitle: string, totalAmount: number) => Collaboration;
+  bookCreatorCollective: (collectiveId: string, businessNote: string) => Collaboration;
   createCampaign: (campaign: Omit<Campaign, 'id' | 'businessId' | 'businessName' | 'businessLogo' | 'businessVerified' | 'applicantsCount' | 'shortlistedCount' | 'createdAt'>) => Campaign;
   applyToCampaign: (application: Omit<CampaignApplication, 'id' | 'appliedAt' | 'status'>) => void;
   updateApplicationStatus: (applicationId: string, status: CampaignApplication['status']) => void;
@@ -249,6 +275,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isRead: false
       }
     ];
+  });
+
+  const [localAdChannels, setLocalAdChannels] = useState<LocalAdChannel[]>(() => {
+    const saved = localStorage.getItem('colab_local_channels');
+    return saved ? JSON.parse(saved) : LOCAL_AD_CHANNELS;
+  });
+
+  const [creatorCollectives, setCreatorCollectives] = useState<CreatorCollective[]>(() => {
+    const saved = localStorage.getItem('colab_creator_collectives');
+    return saved ? JSON.parse(saved) : CREATOR_COLLECTIVES;
+  });
+
+  const [affiliatePrograms, setAffiliatePrograms] = useState<AffiliateProgram[]>(() => {
+    const saved = localStorage.getItem('colab_affiliate_programs');
+    return saved ? JSON.parse(saved) : AFFILIATE_PROGRAMS;
+  });
+
+  const [creatorAffiliateLinks, setCreatorAffiliateLinks] = useState<CreatorAffiliateLink[]>(() => {
+    const saved = localStorage.getItem('colab_creator_affiliate_links');
+    return saved ? JSON.parse(saved) : CREATOR_AFFILIATE_LINKS;
+  });
+
+  const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>(() => {
+    const saved = localStorage.getItem('colab_booking_slots');
+    return saved ? JSON.parse(saved) : BOOKING_SLOTS;
+  });
+
+  const [performanceAttributions, setPerformanceAttributions] = useState<PerformanceAttribution[]>(() => {
+    const saved = localStorage.getItem('colab_performance_attributions');
+    return saved ? JSON.parse(saved) : PERFORMANCE_ATTRIBUTIONS;
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -668,6 +724,151 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const switchSubProfile = (subProfileId: string) => {
+    if (!currentUser) return;
+    const updatedUser = { ...currentUser, activeSubProfileId: subProfileId };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('colab_current_user', JSON.stringify(updatedUser));
+  };
+
+  const createOrUpdateSubProfile = (newSub: ProfessionalSubProfile) => {
+    if (!currentUser) return;
+    const existing = currentUser.subProfiles || [];
+    const index = existing.findIndex(p => p.id === newSub.id);
+    let updatedSubs: ProfessionalSubProfile[];
+    if (index >= 0) {
+      updatedSubs = [...existing];
+      updatedSubs[index] = newSub;
+    } else {
+      updatedSubs = [...existing, newSub];
+    }
+    const updatedUser = { ...currentUser, subProfiles: updatedSubs, activeSubProfileId: newSub.id };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('colab_current_user', JSON.stringify(updatedUser));
+  };
+
+  const bookConsultationSlot = (slotId: string, clientName: string) => {
+    setBookingSlots(prev => prev.map(s => {
+      if (s.id === slotId) {
+        return { ...s, status: 'booked', clientName };
+      }
+      return s;
+    }));
+  };
+
+  const joinAffiliateProgram = (programId: string): CreatorAffiliateLink => {
+    const program = affiliatePrograms.find(p => p.id === programId);
+    const creatorId = currentUser?.id || 'user-creator-1';
+    const creatorName = currentUser?.name?.split(' ')[0] || 'CREATOR';
+    const cleanCode = `${creatorName.toUpperCase()}${program?.commissionRate || '15'}`;
+    const newLink: CreatorAffiliateLink = {
+      id: `link-${Date.now()}`,
+      programId,
+      creatorId,
+      referralCode: cleanCode,
+      referralUrl: `https://colab.market/aff/${programId}/${cleanCode}`,
+      couponCode: cleanCode,
+      clicks: 0,
+      conversions: 0,
+      earnedAmount: 0,
+      status: 'active'
+    };
+    setCreatorAffiliateLinks(prev => [newLink, ...prev]);
+    return newLink;
+  };
+
+  const simulateAffiliateOrder = (linkId: string, orderValue: number) => {
+    setCreatorAffiliateLinks(prev => prev.map(link => {
+      if (link.id === linkId) {
+        const prog = affiliatePrograms.find(p => p.id === link.programId);
+        const commission = prog?.commissionType === 'flat' 
+          ? prog.commissionRate 
+          : Math.round(orderValue * ((prog?.commissionRate || 15) / 100));
+        return {
+          ...link,
+          clicks: link.clicks + 1,
+          conversions: link.conversions + 1,
+          earnedAmount: link.earnedAmount + commission
+        };
+      }
+      return link;
+    }));
+  };
+
+  const bookLocalAdBundle = (channelIds: string[], campaignTitle: string, totalAmount: number): Collaboration => {
+    const fee = Math.round(totalAmount * (settings.platformCommissionPercent / 100));
+    const newCollab: Collaboration = {
+      id: `collab-local-${Date.now()}`,
+      campaignId: `local-camp-${Date.now()}`,
+      campaignTitle: campaignTitle || 'Hyperlocal Multi-Channel Campaign',
+      businessId: currentUser?.id || 'user-biz-1',
+      businessName: currentUser?.name || 'Local Business',
+      businessAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=400&q=80',
+      creatorId: 'local-network',
+      creatorName: `${channelIds.length} Local Channels Bundle`,
+      creatorAvatar: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+      creatorHandle: '@local_network',
+      agreedAmount: totalAmount,
+      platformFee: fee,
+      creatorPayout: totalAmount - fee,
+      status: 'escrow_funded',
+      createdAt: new Date().toISOString(),
+      deadline: new Date(Date.now() + 5 * 86400000).toISOString(),
+      lastUpdated: new Date().toISOString(),
+      businessReviewed: false,
+      creatorReviewed: false,
+      escrowStatus: 'held',
+      contractTerms: `Hyperlocal campaign covering ${channelIds.length} verified regional channels.`,
+      deliverables: [
+        {
+          id: `del-local-1`,
+          title: `Hyperlocal Reels & Community Posts across ${channelIds.length} channels`,
+          format: 'Multi-Channel Reel & Story Package',
+          status: 'pending'
+        }
+      ]
+    };
+    setCollaborations(prev => [newCollab, ...prev]);
+    return newCollab;
+  };
+
+  const bookCreatorCollective = (collectiveId: string, businessNote: string): Collaboration => {
+    const collective = creatorCollectives.find(c => c.id === collectiveId);
+    const totalAmount = collective?.bundlePrice || 25000;
+    const fee = Math.round(totalAmount * (settings.platformCommissionPercent / 100));
+    const newCollab: Collaboration = {
+      id: `collab-coll-${Date.now()}`,
+      campaignId: `coll-camp-${Date.now()}`,
+      campaignTitle: collective?.title || 'Creator Collective Campaign',
+      businessId: currentUser?.id || 'user-biz-1',
+      businessName: currentUser?.name || 'Local Business',
+      businessAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=400&q=80',
+      creatorId: collectiveId,
+      creatorName: collective?.title || 'Creator Collective',
+      creatorAvatar: collective?.coverImage || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+      creatorHandle: '@collective',
+      agreedAmount: totalAmount,
+      platformFee: fee,
+      creatorPayout: totalAmount - fee,
+      status: 'escrow_funded',
+      createdAt: new Date().toISOString(),
+      deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
+      lastUpdated: new Date().toISOString(),
+      businessReviewed: false,
+      creatorReviewed: false,
+      escrowStatus: 'held',
+      contractTerms: `Creator collective package: ${collective?.title}. ${businessNote || ''}`,
+      deliverables: collective?.deliverables.map((del, i) => ({
+        id: `del-coll-${i}`,
+        title: del,
+        format: 'Collective Package Item',
+        status: 'pending' as const
+      })) || []
+    };
+    setCollaborations(prev => [newCollab, ...prev]);
+    return newCollab;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -693,6 +894,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settings,
         conversations,
         messages,
+        localAdChannels,
+        creatorCollectives,
+        affiliatePrograms,
+        creatorAffiliateLinks,
+        bookingSlots,
+        performanceAttributions,
+        switchSubProfile,
+        createOrUpdateSubProfile,
+        bookConsultationSlot,
+        joinAffiliateProgram,
+        simulateAffiliateOrder,
+        bookLocalAdBundle,
+        bookCreatorCollective,
         createCampaign,
         applyToCampaign,
         updateApplicationStatus,

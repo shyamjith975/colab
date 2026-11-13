@@ -15,10 +15,18 @@ import {
   ChevronRight,
   Send,
   Sparkles,
-  X
+  X,
+  QrCode,
+  BarChart3,
+  Tag,
+  Copy,
+  Check,
+  Download,
+  FileCheck,
+  CheckCircle2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { formatCurrency, formatDate } from '../utils';
+import { formatCurrency, formatDate, formatCompactNumber } from '../utils';
 
 export const CollaborationDealRoomPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,10 +41,18 @@ export const CollaborationDealRoomPage: React.FC = () => {
     approveDeliverable,
     releaseEscrowPayment,
     addReview,
-    createOrGetConversation
+    createOrGetConversation,
+    performanceAttributions
   } = useApp();
 
   const collab = collaborations.find((c) => c.id === id);
+
+  // Tab State
+  const [dealTab, setDealTab] = useState<'deliverables' | 'tracking' | 'agreement' | 'invoices'>('deliverables');
+
+  // Copy helpers
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCoupon, setCopiedCoupon] = useState(false);
 
   // Deliverable submission modal
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -245,7 +261,59 @@ export const CollaborationDealRoomPage: React.FC = () => {
           </div>
         </div>
 
-        {/* DELIVERABLES & CONTENT SUBMISSIONS */}
+        {/* WORKSPACE NAVIGATION TABS */}
+        <div className="flex items-center space-x-2 border-b border-slate-200 overflow-x-auto text-xs sm:text-sm font-semibold pb-1">
+          <button
+            onClick={() => setDealTab('deliverables')}
+            className={`pb-3 px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+              dealTab === 'deliverables'
+                ? 'border-indigo-600 text-indigo-600 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Deliverables & Submissions ({collab.deliverables.length})</span>
+          </button>
+
+          <button
+            onClick={() => setDealTab('tracking')}
+            className={`pb-3 px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+              dealTab === 'tracking'
+                ? 'border-indigo-600 text-indigo-600 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>Proof of Performance & Tracking</span>
+          </button>
+
+          <button
+            onClick={() => setDealTab('agreement')}
+            className={`pb-3 px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+              dealTab === 'agreement'
+                ? 'border-indigo-600 text-indigo-600 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Digital Agreement & ASCI Scanner</span>
+          </button>
+
+          <button
+            onClick={() => setDealTab('invoices')}
+            className={`pb-3 px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+              dealTab === 'invoices'
+                ? 'border-indigo-600 text-indigo-600 font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>GST Invoice & Escrow</span>
+          </button>
+        </div>
+
+        {/* TAB 1: DELIVERABLES & CONTENT SUBMISSIONS */}
+        {dealTab === 'deliverables' && (
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -387,6 +455,295 @@ export const CollaborationDealRoomPage: React.FC = () => {
             </div>
           )}
         </div>
+        )}
+
+        {/* TAB 2: CAMPAIGN TRACKING & PROOF OF PERFORMANCE */}
+        {dealTab === 'tracking' && (
+          <div className="space-y-6">
+            {/* Tracking Assets Generator */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                    <BarChart3 className="w-5 h-5 text-indigo-600" />
+                    <span>Attribution Telemetry & Trackable Campaign Assets</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Measure clicks, customer enquiries, store visits, and revenue attributed to this creator.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold flex items-center space-x-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Verified Telemetry Active</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {/* 1. Trackable Short Link */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                  <span className="font-bold text-slate-700 block uppercase text-[10px]">Trackable Bio & Story Link</span>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <span className="font-mono text-indigo-600 font-bold truncate pr-2">
+                      https://colab.market/r/{collab.id}
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://colab.market/r/${collab.id}`);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="text-slate-600 hover:text-slate-900 shrink-0 font-bold"
+                    >
+                      {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Includes UTM parameters and click attribution tags.</p>
+                </div>
+
+                {/* 2. In-Store / Event QR Code */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-700 block uppercase text-[10px]">In-Store QR Code</span>
+                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">For Retail/Cafe</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center space-x-3">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://colab.market/r/${collab.id}`}
+                      alt="QR Code"
+                      className="w-12 h-12 rounded-lg border border-slate-100"
+                    />
+                    <div className="truncate">
+                      <span className="font-bold text-slate-800 block">Footfall Tracker</span>
+                      <a
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://colab.market/r/${collab.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-600 hover:underline text-[11px] font-semibold flex items-center space-x-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>Download High-Res QR</span>
+                      </a>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500">Scan at table counter to track offline customer footfall.</p>
+                </div>
+
+                {/* 3. Promo Coupon Code */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                  <span className="font-bold text-slate-700 block uppercase text-[10px]">Promotional Coupon Code</span>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <span className="font-mono text-slate-900 font-black tracking-widest text-sm">
+                      {collab.creatorName.split(' ')[0].toUpperCase()}15
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${collab.creatorName.split(' ')[0].toUpperCase()}15`);
+                        setCopiedCoupon(true);
+                        setTimeout(() => setCopiedCoupon(false), 2000);
+                      }}
+                      className="text-slate-600 hover:text-slate-900 shrink-0 font-bold"
+                    >
+                      {copiedCoupon ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">15% Customer Discount with checkout attribution.</p>
+                </div>
+              </div>
+
+              {/* Attribution Metrics Grid */}
+              <div className="space-y-3 pt-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">
+                    Live Performance Telemetry
+                  </h4>
+                  <div className="flex items-center space-x-2 text-[10px]">
+                    <span className="flex items-center space-x-1 text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>Verified Platform Telemetry</span>
+                    </span>
+                    <span className="text-slate-400">vs</span>
+                    <span className="text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded">
+                      Creator-Reported Proof
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Views</span>
+                    <span className="font-black text-slate-900 text-base">48,500</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">Platform Video</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Link Clicks</span>
+                    <span className="font-black text-indigo-700 text-base">1,420</span>
+                    <span className="text-[9px] text-emerald-600 font-bold block mt-0.5">✓ SDK Verified</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Inquiries</span>
+                    <span className="font-black text-slate-900 text-base">84</span>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Direct WhatsApp/Call</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Redemptions</span>
+                    <span className="font-black text-emerald-700 text-base">42</span>
+                    <span className="text-[9px] text-emerald-600 font-bold block mt-0.5">✓ Verified at POS</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Attributed Sales</span>
+                    <span className="font-black text-slate-900 text-base">₹ 52,800</span>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Tracked GMV</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Cost Per Lead</span>
+                    <span className="font-black text-emerald-700 text-base">₹ 41.60</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">CPL</span>
+                  </div>
+
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center">
+                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Campaign ROI</span>
+                    <span className="font-black text-indigo-700 text-base">3.8x</span>
+                    <span className="text-[9px] text-indigo-600 font-bold block mt-0.5">High Performance</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: DIGITAL AGREEMENT & ASCI COMPLIANCE SCANNER */}
+        {dealTab === 'agreement' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                    <FileCheck className="w-5 h-5 text-indigo-600" />
+                    <span>Legally Binding Digital Agreement & ASCI Vision Scan</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Compliant with Indian Information Technology Act 2000 & ASCI Influencer Guidelines.
+                  </p>
+                </div>
+
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Mutually E-Signed</span>
+                </span>
+              </div>
+
+              {/* ASCI Vision Scanner Report */}
+              <div className="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-950 flex items-center space-x-1.5">
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    <span>AI ASCI Regulatory Vision & Audio Scanner</span>
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-black text-xs rounded-full">
+                    98% Compliance Score (Pass)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                  <div className="bg-white p-3 rounded-xl border border-indigo-100 space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Visual Disclosure</span>
+                    <p className="font-bold text-emerald-700">✓ #Ad & #Collab Tag Detected</p>
+                    <span className="text-[10px] text-slate-500 block">Prominently visible in initial 3 seconds</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-indigo-100 space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Audio Transcript</span>
+                    <p className="font-bold text-emerald-700">✓ Verbal Brand Partnership Mention</p>
+                    <span className="text-[10px] text-slate-500 block">Identified in speech-to-text model</span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-indigo-100 space-y-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Restricted Claims</span>
+                    <p className="font-bold text-emerald-700">✓ Zero Misleading Superlatives</p>
+                    <span className="text-[10px] text-slate-500 block">No unsubstantiated medical claims</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal Terms Clause */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
+                <span className="font-bold uppercase text-[10px] text-slate-500 block">Summary Agreement Clauses:</span>
+                <p>1. <strong>Intellectual Property & Licensing:</strong> The creator grants the business non-exclusive digital rights to repost and run Meta Spark Ads using the agreed deliverable for 60 days.</p>
+                <p>2. <strong>Escrow & Milestone Release:</strong> Full compensation is secured in platform escrow and is automatically payable to the creator upon deliverable sign-off.</p>
+                <p>3. <strong>Dispute Resolution:</strong> Any deliverable deviation is reviewed by platform moderators within 48 hours.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: GST TAX INVOICE & ESCROW STATEMENT */}
+        {dealTab === 'invoices' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <span>Commercial GST Tax Invoice & Escrow Deposit Record</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Official tax invoice with SAC Code 998371 for corporate GST input tax credit (ITC).
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => alert(`Tax Invoice #INV-${collab.id.toUpperCase()} downloaded.`)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition flex items-center space-x-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Tax Invoice (PDF)</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                  <span className="font-bold text-slate-500 uppercase text-[10px] block">Invoice Details</span>
+                  <div className="space-y-1 text-slate-700">
+                    <p><strong>Invoice Number:</strong> INV-2026-COLAB-{collab.id.slice(-4).toUpperCase()}</p>
+                    <p><strong>Invoice Date:</strong> {formatDate(collab.createdAt)}</p>
+                    <p><strong>SAC Code:</strong> 998371 (Market Research & Advertising)</p>
+                    <p><strong>Escrow Status:</strong> {collab.escrowStatus.toUpperCase()}</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                  <span className="font-bold text-slate-500 uppercase text-[10px] block">Financial Breakdown</span>
+                  <div className="space-y-1 text-slate-700">
+                    <div className="flex justify-between">
+                      <span>Agreed Creator Fee:</span>
+                      <strong>{formatCurrency(collab.agreedAmount)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Platform Commission (8%):</span>
+                      <strong>{formatCurrency(collab.platformFee)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Net Creator Payout:</span>
+                      <strong className="text-emerald-700">{formatCurrency(collab.creatorPayout)}</strong>
+                    </div>
+                    <div className="pt-1 border-t border-slate-200 flex justify-between font-bold text-slate-900">
+                      <span>TDS Deducted (Sec 194R - 1%):</span>
+                      <span>₹{(collab.agreedAmount * 0.01).toFixed(0)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* SUBMIT ASSET MODAL */}
         {showSubmitModal && (

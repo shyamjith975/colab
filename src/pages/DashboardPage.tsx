@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../utils';
-import { UserRole } from '../types';
+import { UserRole, ProfessionalSubProfile } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -52,12 +52,71 @@ export const DashboardPage: React.FC = () => {
     transactions,
     createCollaborationFromApplication,
     updateApplicationStatus,
-    updateCampaignStatus
+    updateCampaignStatus,
+    creatorAffiliateLinks,
+    performanceAttributions,
+    switchSubProfile
   } = useApp();
   const navigate = useNavigate();
 
   // Active sub-tab state
   const [activeTab, setActiveTab] = useState<string>('deals');
+
+  // Unified Professional Identity Sub-Profiles
+  const userSubProfiles: ProfessionalSubProfile[] = (currentUser?.subProfiles && currentUser.subProfiles.length > 0)
+    ? currentUser.subProfiles
+    : [
+        {
+          id: 'sub-inf-default',
+          type: 'influencer',
+          title: 'Fashion & Lifestyle Creator',
+          bio: 'Creating high-aesthetic reels and styling videos for brand campaigns. 185k+ engaged audience.',
+          skills: ['Reel Direction', 'Lookbook Curation', 'Storytelling'],
+          location: currentUser?.location || 'Mumbai, India',
+          languages: ['English', 'Hindi'],
+          startingRate: 4500,
+          portfolio: [
+            { title: 'Summer Capsule Collection', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80', type: 'Reel' }
+          ],
+          verifiedCredentials: ['Verified Creator Partner', 'ASCI Certified'],
+          isAvailable: true
+        },
+        {
+          id: 'sub-ugc-default',
+          type: 'ugc_creator',
+          title: 'UGC Content Specialist (Zero Followers Needed)',
+          bio: 'High-converting face-to-camera unboxings, testimonials and ad creatives for D2C brands.',
+          skills: ['Relatable Hook Scripting', 'Product Demos', 'CapCut Video Editing'],
+          location: currentUser?.location || 'Mumbai, India',
+          languages: ['English', 'Hindi'],
+          startingRate: 3000,
+          portfolio: [
+            { title: '30s D2C Skincare Honest Review', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80', type: 'UGC Video' }
+          ],
+          verifiedCredentials: ['D2C Ad Creative Certified'],
+          isAvailable: true
+        },
+        {
+          id: 'sub-stylist-default',
+          type: 'stylist',
+          title: 'Commercial Wardrobe Stylist',
+          bio: 'Available for studio lookbook shoots, campaign draping, and editorial styling.',
+          skills: ['Lookbook Draping', 'Prop Styling', 'Studio Direction'],
+          location: currentUser?.location || 'Mumbai, India',
+          languages: ['English', 'Hindi'],
+          startingRate: 8000,
+          portfolio: [
+            { title: 'Autumn/Winter Lookbook Shoot', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=600&q=80', type: 'Photoshoot' }
+          ],
+          verifiedCredentials: ['Masterclass in Fashion Styling'],
+          isAvailable: true
+        }
+      ];
+
+  const [activeSubId, setActiveSubId] = useState<string>(
+    currentUser?.activeSubProfileId || userSubProfiles[0].id
+  );
+  const currentSubProfile = userSubProfiles.find(p => p.id === activeSubId) || userSubProfiles[0];
 
   // Rate card builder state (for creator)
   const [rateCard, setRateCard] = useState({
@@ -217,6 +276,79 @@ export const DashboardPage: React.FC = () => {
               <LogOut className="w-3.5 h-3.5" />
               <span>Log Out</span>
             </button>
+          </div>
+        </div>
+
+        {/* 1. UNIFIED PROFESSIONAL IDENTITY: MULTIPLE PROFILES UNDER ONE ACCOUNT */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Unified Professional Identity</span>
+              <h3 className="text-base font-black text-slate-900">Switch & Operate Multi-Vendor Sub-Profiles</h3>
+            </div>
+            <span className="text-xs text-slate-500 font-medium">One master login • Separate portfolios, rate cards & credentials</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {userSubProfiles.map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() => {
+                  setActiveSubId(sub.id);
+                  switchSubProfile(sub.id);
+                }}
+                className={`px-3.5 py-2 rounded-2xl text-xs font-bold transition flex items-center space-x-2 ${
+                  activeSubId === sub.id
+                    ? 'bg-indigo-600 text-white shadow-md scale-[1.02]'
+                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <span>{sub.type === 'influencer' ? '🌟' : sub.type === 'ugc_creator' ? '🎬' : '👗'}</span>
+                <span>{sub.title}</span>
+                {activeSubId === sub.id && (
+                  <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                    Active
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Active Sub-Profile Details */}
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-extrabold text-slate-900 text-sm">{currentSubProfile.title}</h4>
+                  <span className="px-2 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">
+                    {currentSubProfile.isAvailable ? 'Available for Hire' : 'Busy'}
+                  </span>
+                </div>
+                <p className="text-slate-600 mt-0.5">{currentSubProfile.bio}</p>
+              </div>
+
+              <div className="text-left sm:text-right shrink-0">
+                <span className="text-[10px] text-slate-400 block uppercase font-bold">Starting Base Rate</span>
+                <span className="font-extrabold text-indigo-700 text-sm">{formatCurrency(currentSubProfile.startingRate)}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">Skills:</span>
+              {currentSubProfile.skills.map((skill, i) => (
+                <span key={i} className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 text-[10px] font-semibold">
+                  {skill}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60 text-[11px] text-slate-500">
+              <span>📍 {currentSubProfile.location}</span>
+              <span>•</span>
+              <span>🗣️ {currentSubProfile.languages.join(', ')}</span>
+              <span>•</span>
+              <span className="text-emerald-700 font-bold">✓ {currentSubProfile.verifiedCredentials.join(' • ')}</span>
+            </div>
           </div>
         </div>
 
