@@ -13,6 +13,9 @@
     "lint": "tsc --noEmit",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": ">=20.x"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
     "clsx": "^2.1.1",

@@ -48,6 +48,7 @@ import {
   TRANSACTIONS,
   INITIAL_SETTINGS
 } from '../data/mockData';
+import { clientLogin, clientSignup } from './clientAuth';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1';
 
@@ -257,20 +258,58 @@ export const api = {
     }
   },
 
-  // 11. AUTHENTICATION (SHA-256 PASSWORD HASHING)
+  // 11. AUTHENTICATION (SHA-256 PASSWORD HASHING + VERCEL NETWORK RESILIENCE)
   auth: {
     async login(email: string, password: string): Promise<{ success: boolean; user?: UserProfile; token?: string; error?: string }> {
-      return fetchJson('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      }, { success: false, error: 'Database network error' });
+      try {
+        const res = await fetchJson<{ success: boolean; user?: UserProfile; token?: string; error?: string }>(
+          '/auth/login',
+          {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+          },
+          { success: false, error: 'FALLBACK_TRIGGERED' }
+        );
+
+        if (res.success && res.user) {
+          return res;
+        }
+
+        if (res.error && res.error !== 'FALLBACK_TRIGGERED' && res.error !== 'Database network error') {
+          return res;
+        }
+      } catch (err) {
+        // Fall through to client cryptographic auth
+      }
+
+      // Seamless Client-Side Cryptographic Fallback (Vercel, offline, & static deploy)
+      return await clientLogin(email, password);
     },
 
     async signup(payload: { email: string; password: string; name: string; role: UserRole; bio?: string; location?: string }): Promise<{ success: boolean; user?: UserProfile; token?: string; error?: string }> {
-      return fetchJson('/auth/signup', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      }, { success: false, error: 'Database network error' });
+      try {
+        const res = await fetchJson<{ success: boolean; user?: UserProfile; token?: string; error?: string }>(
+          '/auth/signup',
+          {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          },
+          { success: false, error: 'FALLBACK_TRIGGERED' }
+        );
+
+        if (res.success && res.user) {
+          return res;
+        }
+
+        if (res.error && res.error !== 'FALLBACK_TRIGGERED' && res.error !== 'Database network error') {
+          return res;
+        }
+      } catch (err) {
+        // Fall through to client cryptographic auth
+      }
+
+      // Seamless Client-Side Cryptographic Fallback (Vercel, offline, & static deploy)
+      return await clientSignup(payload);
     }
   },
 

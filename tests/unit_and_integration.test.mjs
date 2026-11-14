@@ -1,5 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
 
 describe('co-lab Core Marketplace Business Logic Tests', () => {
 
@@ -906,6 +908,112 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(dbModule.getById('ad_inventory', testAdSlotId), null);
     assert.strictEqual(dbModule.getById('local_ad_channels', testLocalId), null);
     assert.strictEqual(dbModule.getById('sponsorships', testSponsId), null);
+  });
+
+  test('37. Vercel Serverless Gateway (/api/index.js) Execution & Route Handling', async () => {
+    const vercelHandler = (await import('../api/index.js')).default;
+    assert.ok(typeof vercelHandler === 'function', 'api/index.js must export a default handler function');
+
+    // Test GET /api/v1/health through Vercel serverless handler
+    let resStatus = 0;
+    let resHeaders = {};
+    let resData = null;
+
+    const mockReq = {
+      url: '/api/v1/health',
+      method: 'GET',
+      headers: { host: 'colab.vercel.app' }
+    };
+    const mockRes = {
+      statusCode: 200,
+      setHeader(k, v) { resHeaders[k.toLowerCase()] = v; },
+      end(payload) {
+        resStatus = this.statusCode;
+        if (payload) resData = JSON.parse(payload);
+      }
+    };
+
+    await vercelHandler(mockReq, mockRes);
+    assert.strictEqual(resStatus, 200, 'Vercel serverless handler must respond with 200 OK');
+    assert.strictEqual(resHeaders['access-control-allow-origin'], '*', 'CORS headers must be set for Vercel');
+    assert.strictEqual(resData.status, 'ok', 'Health response must be ok');
+
+    // Test POST /api/v1/auth/login through Vercel handler
+    let loginStatus = 0;
+    let loginData = null;
+    const loginReq = {
+      url: '/api/v1/auth/login',
+      method: 'POST',
+      headers: { host: 'colab.vercel.app', 'content-type': 'application/json' },
+      body: { email: 'ananya@colab.test', password: 'Colab@2026' }
+    };
+    const loginRes = {
+      statusCode: 200,
+      setHeader(k, v) { resHeaders[k.toLowerCase()] = v; },
+      end(payload) {
+        loginStatus = this.statusCode;
+        if (payload) loginData = JSON.parse(payload);
+      }
+    };
+
+    await vercelHandler(loginReq, loginRes);
+    assert.strictEqual(loginStatus, 200, 'Vercel login endpoint must return status 200');
+    assert.strictEqual(loginData.success, true, 'Vercel login must authenticate valid credentials');
+    assert.strictEqual(loginData.user.email, 'ananya@colab.test');
+  });
+
+  test('38. Client-Side Cryptographic Fallback Engine (Vercel & Offline Zero-Error Guarantee)', async () => {
+    const { clientLogin, clientSignup, computeSha256 } = await import('../src/services/clientAuth.ts');
+
+    // 1. Verify SHA-256 hash matching
+    const hash = await computeSha256('Colab@2026');
+    assert.strictEqual(hash, '964f4ebb713726d693f0a48ec2c35a440b4b25c7ef6fac7e67fa782d98dc635b');
+
+    // 2. Client login with pre-seeded demo user
+    const loginSuccess = await clientLogin('ananya@colab.test', 'Colab@2026');
+    assert.strictEqual(loginSuccess.success, true, 'Client auth must successfully authenticate pre-seeded account');
+    assert.strictEqual(loginSuccess.user?.name, 'Ananya Sharma');
+    assert.ok(loginSuccess.token, 'Must return authentication session token');
+
+    // 3. Client login with incorrect password
+    const loginFail = await clientLogin('ananya@colab.test', 'WrongPassword123');
+    assert.strictEqual(loginFail.success, false, 'Client auth must reject incorrect password');
+    assert.ok(loginFail.error?.includes('Invalid password'), 'Error message must guide user');
+
+    // 4. Client signup for new user
+    const newEmail = `verifier-${Date.now()}@colab.test`;
+    const signupRes = await clientSignup({
+      name: 'Vercel Quality Assurance',
+      email: newEmail,
+      password: 'ColabSecure2026!',
+      role: 'business',
+      location: 'Kochi, Kerala'
+    });
+    assert.strictEqual(signupRes.success, true, 'Client signup must succeed');
+    assert.strictEqual(signupRes.user?.email, newEmail);
+
+    // 5. Client login with newly created user
+    const newLoginRes = await clientLogin(newEmail, 'ColabSecure2026!');
+    assert.strictEqual(newLoginRes.success, true, 'Newly registered user must be able to log in immediately');
+    assert.strictEqual(newLoginRes.user?.role, 'business');
+  });
+
+  test('39. Vercel Configuration (vercel.json) Rewrites & CORS Integrity', async () => {
+    const vercelConfigPath = path.resolve('vercel.json');
+    assert.ok(fs.existsSync(vercelConfigPath), 'vercel.json must exist in project root');
+
+    const config = JSON.parse(fs.readFileSync(vercelConfigPath, 'utf8'));
+    assert.strictEqual(config.version, 2, 'vercel.json must use version 2 format');
+    assert.ok(Array.isArray(config.rewrites), 'vercel.json must define rewrites');
+
+    // Ensure API routes point to /api/index.js
+    const apiRewrite = config.rewrites.find(r => r.source.includes('/api/v1/'));
+    assert.ok(apiRewrite, 'Must have rewrite rule for /api/v1/(.*)');
+    assert.strictEqual(apiRewrite.destination, '/api/index.js');
+
+    // Ensure SPA fallback points to /index.html
+    const spaRewrite = config.rewrites.find(r => r.destination === '/index.html');
+    assert.ok(spaRewrite, 'Must have SPA rewrite to /index.html for direct link loading');
   });
 });
 

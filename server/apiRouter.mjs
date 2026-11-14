@@ -18,9 +18,16 @@ import {
 import { initDatabase } from '../scripts/init-db.mjs';
 import crypto from 'node:crypto';
 
-// Helper to parse JSON body from incoming Node.js HTTP request
+// Helper to parse JSON body from incoming Node.js HTTP request (supports local dev & Vercel serverless)
 export async function parseJsonBody(req) {
   if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (err) {
+      return {};
+    }
+  }
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
