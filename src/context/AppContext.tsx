@@ -555,6 +555,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setApplications(prev => [newApp, ...prev]);
+    api.applications.create(newApp).catch(() => {});
     // increment count
     setCampaigns(prev => prev.map(c => c.id === applicationData.campaignId ? { ...c, applicantsCount: c.applicantsCount + 1 } : c));
   };

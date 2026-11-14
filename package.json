@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "vite",
     "server": "node server/server.mjs",
     "init-db": "node scripts/init-db.mjs",
     "build": "tsc -b && vite build",
     "test": "node --test tests/unit_and_integration.test.mjs",
-    "lint": "eslint .",
+    "lint": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {

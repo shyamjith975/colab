@@ -10,6 +10,7 @@
 import {
   CreatorProfile,
   Campaign,
+  CampaignApplication,
   Collaboration,
   SponsorshipOpportunity,
   SponsorRequirementRFP,
@@ -150,6 +151,20 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(campaign)
       }, campaign as Campaign);
+    }
+  },
+
+  // 4.5 CAMPAIGN APPLICATIONS API
+  applications: {
+    async getAll(): Promise<CampaignApplication[]> {
+      return fetchJson<CampaignApplication[]>('/campaign-applications', { method: 'GET' }, []);
+    },
+
+    async create(app: Partial<CampaignApplication>): Promise<CampaignApplication> {
+      return fetchJson<CampaignApplication>('/campaign-applications', {
+        method: 'POST',
+        body: JSON.stringify(app)
+      }, app as CampaignApplication);
     }
   },
 

@@ -12,10 +12,11 @@ function colabSqliteApiPlugin() {
           try {
             const { handleApiRequest } = await import('./server/apiRouter.mjs');
             const handled = await handleApiRequest(req, res);
-            if (handled) return;
+            if (handled || res.writableEnded) return;
           } catch (err) {
             console.error('[Vite SQLite API Error]', err);
           }
+          if (res.writableEnded) return;
         }
         next();
       });
