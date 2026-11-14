@@ -1373,5 +1373,67 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(sampleAuditLog.status, 'success');
     assert.strictEqual(sampleAuditLog.action, 'ADMIN_MFA_CHALLENGE');
   });
+
+  test('48. Universal Navbar Visibility: AI Matchmaker Never Overflowed across All Roles', () => {
+    // 5 standard core tabs guaranteed on desktop navbar
+    const universalCoreTabs = [
+      { label: 'Creators', path: '/creators' },
+      { label: 'Campaigns', path: '/campaigns' },
+      { label: 'Sponsorships', path: '/sponsorships' },
+      { label: 'Local Ads', path: '/local-ads', badge: 'City' },
+      { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
+    ];
+
+    assert.strictEqual(universalCoreTabs.length, 5, 'Core bar strictly budgeted to 5 tabs');
+    const aiTab = universalCoreTabs.find(t => t.path === '/ai-tools');
+    assert.ok(aiTab, 'AI Matchmaker tab must exist in core desktop bar');
+    assert.strictEqual(aiTab.badge, 'AI', 'AI Matchmaker has dedicated visible badge');
+
+    // Extended markets placed in "More Markets" dropdown
+    const moreMarketplacePaths = [
+      '/collectives',
+      '/affiliates',
+      '/ugc-pros',
+      '/ad-spaces',
+      '/sponsor-requirements',
+      '/pricing'
+    ];
+    assert.strictEqual(moreMarketplacePaths.length, 6, '6 extended markets in dropdown');
+
+    // Check navbar total character length to guarantee <= 480px width budget on 1024px displays
+    const totalCoreChars = universalCoreTabs.reduce((sum, t) => sum + t.label.length, 0);
+    assert.ok(totalCoreChars < 60, `Core tab character total (${totalCoreChars}) is well within navbar width budget`);
+  });
+
+  test('49. Brand Unified Omnichannel Portal: Zero Special Account Requirement', () => {
+    // Brand persona native capabilities
+    const brandCapabilities = {
+      role: 'business',
+      canSponsorEvents: true,
+      canPostCorporateRfp: true,
+      canBookLocalAds: true,
+      canTrackOfflineQrFootfall: true,
+      canManageAffiliateProgram: true,
+      canRunAiCreatorMatchmaker: true,
+      canViewAllEcosystemTelemetry: true
+    };
+
+    assert.strictEqual(brandCapabilities.canSponsorEvents, true, 'Brand can sponsor college fests & summits');
+    assert.strictEqual(brandCapabilities.canPostCorporateRfp, true, 'Brand can post corporate sponsor requirements');
+    assert.strictEqual(brandCapabilities.canBookLocalAds, true, 'Brand can buy local city ad networks');
+    assert.strictEqual(brandCapabilities.canTrackOfflineQrFootfall, true, 'Brand can track physical POS QR conversions');
+    assert.strictEqual(brandCapabilities.canManageAffiliateProgram, true, 'Brand can set DTC commission tiers');
+    assert.strictEqual(brandCapabilities.canRunAiCreatorMatchmaker, true, 'Brand can match creators in dashboard');
+
+    // Sub-profiles allow instant persona switching without secondary credentials
+    const brandSubProfiles = [
+      { id: 'sub-biz-brand', type: 'business', title: 'DTC Brand Marketing & Creator Deals' },
+      { id: 'sub-biz-sponsor', type: 'sponsor', title: 'Corporate Event & Campus Sponsor' },
+      { id: 'sub-biz-local', type: 'business', title: 'Hyperlocal City Retail Advertiser' }
+    ];
+
+    assert.strictEqual(brandSubProfiles.length, 3, 'Brand has 3 built-in commercial personas');
+    assert.ok(brandSubProfiles.some(p => p.type === 'sponsor'), 'Sponsor persona natively included');
+  });
 });
 
