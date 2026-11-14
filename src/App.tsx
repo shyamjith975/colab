@@ -5,6 +5,8 @@ import { Navbar } from './components/layout/Navbar';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { Footer } from './components/layout/Footer';
 import { LoginModal } from './components/auth/LoginModal';
+import { ComplianceCenterModal } from './components/compliance/ComplianceCenterModal';
+import { useApp } from './context/AppContext';
 
 // Universal Scroll to Top on page change
 const ScrollToTop: React.FC = () => {
@@ -36,6 +38,17 @@ import { LocalAdsPage } from './pages/LocalAdsPage';
 import { CollectivesPage } from './pages/CollectivesPage';
 import { AffiliatesPage } from './pages/AffiliatesPage';
 import { SponsorRequirementsPage } from './pages/SponsorRequirementsPage';
+
+const ComplianceModalContainer: React.FC = () => {
+  const { showComplianceModal, setShowComplianceModal, complianceModalTab } = useApp();
+  return (
+    <ComplianceCenterModal
+      isOpen={showComplianceModal}
+      onClose={() => setShowComplianceModal(false)}
+      defaultTab={complianceModalTab}
+    />
+  );
+};
 
 export const App: React.FC = () => {
   return (
@@ -69,6 +82,7 @@ export const App: React.FC = () => {
           <Footer />
           <MobileBottomNav />
           <LoginModal />
+          <ComplianceModalContainer />
         </div>
       </Router>
     </AppProvider>

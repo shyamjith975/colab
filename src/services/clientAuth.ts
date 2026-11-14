@@ -123,7 +123,7 @@ const SEEDED_DEMO_USERS: UserProfile[] = [
 ];
 
 // Pure JS SHA-256 implementation as universal fallback if crypto.subtle is unavailable
-function pureJsSha256(ascii: string): string {
+export function pureJsSha256(ascii: string): string {
   function rightRotate(value: number, amount: number) {
     return (value >>> amount) | (value << (32 - amount));
   }
@@ -212,6 +212,8 @@ function pureJsSha256(ascii: string): string {
   }
   return result;
 }
+
+export const sha256Hex = pureJsSha256;
 
 /**
  * Universal SHA-256 hashing for browser and Node.js

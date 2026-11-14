@@ -556,3 +556,6 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   maintenanceMode: false
 };
 
+// Export all Security, Compliance, DPDP, and Payment types
+export * from './compliance';
+

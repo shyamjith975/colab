@@ -29,7 +29,8 @@ export const Navbar: React.FC = () => {
     switchUser,
     users,
     searchQuery,
-    setSearchQuery
+    setSearchQuery,
+    openComplianceModal
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -388,6 +389,16 @@ export const Navbar: React.FC = () => {
                   <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-600 rounded-full"></span>
                 </Link>
 
+                {/* Trust & Compliance Center */}
+                <button
+                  onClick={() => openComplianceModal('payment')}
+                  className="hidden xl:flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0"
+                  title="Trust & Regulatory Compliance (DPDP Act 2023, RBI PA-PG, ASCI, 8-Point IP, Security)"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Trust & Compliance</span>
+                </button>
+
                 {/* Admin shortcut if admin */}
                 {currentUser?.role === 'admin' && (
                   <Link
@@ -470,6 +481,17 @@ export const Navbar: React.FC = () => {
                               <span>Admin Control Panel</span>
                             </Link>
                           )}
+
+                          <button
+                            onClick={() => {
+                              openComplianceModal('payment');
+                              setProfileDropdownOpen(false);
+                            }}
+                            className="w-full flex items-center space-x-2.5 px-4 py-2 hover:bg-indigo-50 text-indigo-800 font-medium transition text-left cursor-pointer"
+                          >
+                            <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                            <span>Trust & Legal Compliance</span>
+                          </button>
 
                           <button
                             onClick={() => {

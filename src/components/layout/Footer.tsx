@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { ShieldCheck, Heart, Sparkles, Lock } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 export const Footer: React.FC = () => {
+  const { openComplianceModal } = useApp();
+
   return (
     <footer className="bg-slate-900 text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,10 +23,13 @@ export const Footer: React.FC = () => {
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               India's premier multi-vendor creator economy, influencer marketing, advertising, sponsorship & commercial collaboration marketplace. Connecting businesses of every size with talented creators.
             </p>
-            <div className="flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/80 px-3 py-2 rounded-lg w-fit border border-slate-700/50">
+            <button
+              onClick={() => openComplianceModal('payment')}
+              className="flex items-center space-x-2 text-xs text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 px-3 py-2 rounded-lg w-fit border border-slate-700/50 transition cursor-pointer"
+            >
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span>Verified Milestone Escrow & ASCI Compliant</span>
-            </div>
+            </button>
           </div>
 
           {/* Product Marketplaces */}
@@ -89,12 +95,54 @@ export const Footer: React.FC = () => {
               Trust & Legal
             </h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
-              <li><span className="hover:text-white cursor-pointer">Terms of Commercial Service</span></li>
-              <li><span className="hover:text-white cursor-pointer">Privacy & DPDP Compliance</span></li>
-              <li><span className="hover:text-white cursor-pointer">Escrow & Milestone Settlement</span></li>
-              <li><span className="hover:text-white cursor-pointer">ASCI Disclosure Guidelines</span></li>
-              <li><span className="hover:text-white cursor-pointer">GST & TDS Invoicing Guide</span></li>
-              <li><span className="hover:text-white cursor-pointer">Dispute Resolution Policy</span></li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('ip')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  8-Point IP Terms & eSign (13.6)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('dpdp')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  Privacy & DPDP Act 2023 (13.2)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('payment')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  Escrow, PA-PG & KYC (13.4)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('asci')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  ASCI Advertising Disclosures (13.3)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('security')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  Security, RBAC & MFA Audit (12.3)
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openComplianceModal('notifications')}
+                  className="hover:text-white cursor-pointer transition text-left"
+                >
+                  Email, SMS & WhatsApp Alerts
+                </button>
+              </li>
             </ul>
           </div>
         </div>

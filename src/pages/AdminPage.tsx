@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   TrendingUp,
@@ -11,10 +11,18 @@ import {
   Sparkles,
   Search,
   Eye,
-  Lock
+  Lock,
+  Key,
+  Database,
+  FileCheck,
+  Download,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../utils';
+import { complianceService } from '../services/complianceService';
+import { SecurityAuditLog } from '../types/compliance';
 
 export const AdminPage: React.FC = () => {
   const {
@@ -25,11 +33,34 @@ export const AdminPage: React.FC = () => {
     settings,
     updateSettings,
     toggleUserVerification,
-    updateCampaignStatus
+    updateCampaignStatus,
+    openComplianceModal
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'campaigns' | 'finances' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'campaigns' | 'finances' | 'settings' | 'security'>('overview');
   const [userSearch, setUserSearch] = useState('');
+  const [adminMfaCode, setAdminMfaCode] = useState('');
+  const [mfaStatus, setMfaStatus] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<SecurityAuditLog[]>([]);
+
+  useEffect(() => {
+    setAuditLogs(complianceService.getAuditLogs(20));
+  }, [activeTab]);
+
+  const handleVerifyAdminMfa = (e: React.FormEvent) => {
+    e.preventDefault();
+    const ok = complianceService.verifyAdminMfa(adminMfaCode);
+    setMfaStatus(ok ? 'MFA TOTP Token Validated ✓ (Session Elevated)' : 'Invalid 6-Digit Code. Try: 123456');
+    complianceService.logAuditEvent({
+      userId: 'user-admin-1',
+      userRole: 'admin',
+      action: 'ADMIN_MFA_CHALLENGE',
+      resource: 'admin/security',
+      status: ok ? 'success' : 'failure',
+      details: { codeEntered: ok ? 'VALID_TOTP' : 'INVALID' }
+    });
+    setAuditLogs(complianceService.getAuditLogs(20));
+  };
 
   // Editable settings form
   const [commissionRate, setCommissionRate] = useState(settings.platformCommissionPercent);
@@ -160,6 +191,16 @@ export const AdminPage: React.FC = () => {
             }`}
           >
             Platform Settings & Rates
+          </button>
+
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`pb-3 px-4 border-b-2 transition flex items-center space-x-1.5 ${
+              activeTab === 'security' ? 'border-indigo-600 text-indigo-600 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <span>Security, MFA & DPDP (12.3 & 13.2)</span>
           </button>
         </div>
 
@@ -434,6 +475,197 @@ export const AdminPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* TAB 6: SECURITY, MFA & DPDP COMPLIANCE (12.3 & 13.2) */}
+        {activeTab === 'security' && (
+          <div className="space-y-6">
+            {/* Top Security Banner */}
+            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <h3 className="font-extrabold text-base">Section 12.3 Security & Section 13.2 DPDP Governance</h3>
+                </div>
+                <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+                  Cryptographic authentication, database-level parameterized queries, sliding-window rate limiting (120 req/min), HMAC SHA-256 webhook signatures, and DPDP Act 2023 compliance.
+                </p>
+              </div>
+
+              <button
+                onClick={() => openComplianceModal('security')}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition flex items-center space-x-2 shrink-0 shadow-xs"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Open Full Interactive Modal</span>
+              </button>
+            </div>
+
+            {/* Grid 1: Admin MFA Challenge & RBAC Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* MFA Card */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Key className="w-4 h-4 text-indigo-600" />
+                    <h4 className="font-bold text-slate-900 text-sm">Super Admin MFA (TOTP 2FA)</h4>
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase">
+                    Mandatory Active
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Per Section 12.3 security specifications, administrators require Multi-Factor Authentication. Test real-time TOTP challenge validation below:
+                </p>
+
+                <form onSubmit={handleVerifyAdminMfa} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Enter 6-Digit Admin TOTP Code:
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        required
+                        placeholder="123456"
+                        value={adminMfaCode}
+                        onChange={(e) => setAdminMfaCode(e.target.value)}
+                        className="w-40 p-2.5 font-mono text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition"
+                      >
+                        Verify Code
+                      </button>
+                    </div>
+                  </div>
+
+                  {mfaStatus && (
+                    <p className={`text-xs font-bold ${mfaStatus.includes('✓') ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {mfaStatus}
+                    </p>
+                  )}
+                </form>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1 text-slate-500">
+                  <div className="flex justify-between">
+                    <span>Algorithm:</span>
+                    <strong className="text-slate-800">RFC 6238 TOTP (SHA-1/SHA-256)</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Window Drift:</span>
+                    <strong className="text-slate-800">±30 seconds</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Test Bypass Code:</span>
+                    <strong className="text-indigo-600 font-mono">123456</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* RBAC Matrix */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <h4 className="font-bold text-slate-900 text-sm">Role-Based Access Control (RBAC) Matrix</h4>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-500">6 System Roles</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                    <div>
+                      <span className="font-bold text-slate-800 block">Admin</span>
+                      <span className="text-[10px] text-slate-500">Financial settings, user moderation, audit logs</span>
+                    </div>
+                    <span className="text-[10px] bg-indigo-50 text-indigo-700 font-black px-2 py-0.5 rounded">All Permissions</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                    <div>
+                      <span className="font-bold text-slate-800 block">Creator & UGC Pro</span>
+                      <span className="text-[10px] text-slate-500">Proposals, deliverables, rate card management</span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 font-black px-2 py-0.5 rounded">Self-Scope</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                    <div>
+                      <span className="font-bold text-slate-800 block">Business & Brand</span>
+                      <span className="text-[10px] text-slate-500">Campaign creation, deliverable sign-off, escrow deposit</span>
+                    </div>
+                    <span className="text-[10px] bg-amber-50 text-amber-800 font-black px-2 py-0.5 rounded">Buyer-Scope</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Real-time Security & Compliance Audit Log Viewer */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-sm flex items-center space-x-2">
+                    <Database className="w-4 h-4 text-indigo-600" />
+                    <span>Real-Time Security & Compliance Audit Log (Immutable Events)</span>
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Records all authentication, payment webhook verifications, eSigns, and DPDP actions.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setAuditLogs(complianceService.getAuditLogs(20))}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Refresh Log</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Timestamp</th>
+                      <th className="py-2.5 px-3">Security Action</th>
+                      <th className="py-2.5 px-3">Actor Role</th>
+                      <th className="py-2.5 px-3">Target Resource</th>
+                      <th className="py-2.5 px-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-mono">
+                    {auditLogs.slice(0, 10).map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50/70 transition">
+                        <td className="py-2.5 px-3 text-slate-500 text-[11px] whitespace-nowrap">
+                          {formatDate(log.timestamp)}
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-slate-800">
+                          {log.action}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 capitalize">
+                          {log.userRole}
+                        </td>
+                        <td className="py-2.5 px-3 text-indigo-600 font-sans text-xs">
+                          {log.resource}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase font-sans ${
+                            log.status === 'success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>

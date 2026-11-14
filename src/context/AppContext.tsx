@@ -39,6 +39,11 @@ interface AppContextType {
   logout: () => void;
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
+  showComplianceModal: boolean;
+  setShowComplianceModal: (show: boolean) => void;
+  complianceModalTab: 'payment' | 'security' | 'dpdp' | 'asci' | 'ip' | 'notifications';
+  setComplianceModalTab: (tab: 'payment' | 'security' | 'dpdp' | 'asci' | 'ip' | 'notifications') => void;
+  openComplianceModal: (tab?: 'payment' | 'security' | 'dpdp' | 'asci' | 'ip' | 'notifications') => void;
   switchUser: (userId: string) => void;
   switchRole: (role: UserRole) => void;
   users: UserProfile[];
@@ -119,6 +124,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [showComplianceModal, setShowComplianceModal] = useState<boolean>(false);
+  const [complianceModalTab, setComplianceModalTab] = useState<'payment' | 'security' | 'dpdp' | 'asci' | 'ip' | 'notifications'>('payment');
+
+  const openComplianceModal = (tab: 'payment' | 'security' | 'dpdp' | 'asci' | 'ip' | 'notifications' = 'payment') => {
+    setComplianceModalTab(tab);
+    setShowComplianceModal(true);
+  };
 
   const [users, setUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('colab_users');
@@ -1499,7 +1511,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bookAdInventory,
         submitSponsorshipProposal,
         searchQuery,
-        setSearchQuery
+        setSearchQuery,
+        showComplianceModal,
+        setShowComplianceModal,
+        complianceModalTab,
+        setComplianceModalTab,
+        openComplianceModal
       }}
     >
       {children}
