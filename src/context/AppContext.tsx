@@ -25,30 +25,9 @@ import {
   ProfessionalSubProfile,
   SponsorRequirementRFP,
   StructuredCollaborationEnquiry,
-  NegotiationQuote
+  NegotiationQuote,
+  DEFAULT_PLATFORM_SETTINGS
 } from '../types';
-import {
-  DEMO_USERS,
-  CREATORS,
-  BUSINESSES,
-  CAMPAIGNS,
-  SPONSORSHIPS,
-  CREATIVE_PROFESSIONALS,
-  AD_INVENTORY,
-  COLLABORATIONS,
-  REVIEWS,
-  TRANSACTIONS,
-  INITIAL_SETTINGS,
-  LOCAL_AD_CHANNELS,
-  CREATOR_COLLECTIVES,
-  AFFILIATE_PROGRAMS,
-  CREATOR_AFFILIATE_LINKS,
-  BOOKING_SLOTS,
-  PERFORMANCE_ATTRIBUTIONS,
-  SPONSOR_RFPS,
-  STRUCTURED_ENQUIRIES,
-  NEGOTIATION_QUOTES
-} from '../data/mockData';
 import { api } from '../services/api';
 
 interface AppContextType {
@@ -136,212 +115,124 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedLogin = localStorage.getItem('colab_is_logged_in');
     if (savedLogin === 'false') return null;
     const saved = localStorage.getItem('colab_current_user');
-    return saved ? JSON.parse(saved) : DEMO_USERS[0];
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 
   const [users, setUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('colab_users');
-    return saved ? JSON.parse(saved) : DEMO_USERS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [creators, setCreators] = useState<CreatorProfile[]>(() => {
     const saved = localStorage.getItem('colab_creators');
-    return saved ? JSON.parse(saved) : CREATORS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [businesses, setBusinesses] = useState<BusinessProfile[]>(() => {
     const saved = localStorage.getItem('colab_businesses');
-    return saved ? JSON.parse(saved) : BUSINESSES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
     const saved = localStorage.getItem('colab_campaigns');
-    return saved ? JSON.parse(saved) : CAMPAIGNS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [applications, setApplications] = useState<CampaignApplication[]>(() => {
     const saved = localStorage.getItem('colab_applications');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'app-sample-1',
-        campaignId: 'camp-1',
-        campaignTitle: 'Spring Pastel Handloom Collection Launch',
-        creatorId: 'user-creator-1',
-        creatorName: 'Ananya Sharma',
-        creatorHandle: '@ananya_style',
-        creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        creatorCategory: 'Fashion & Style',
-        creatorFollowers: 185000,
-        creatorRating: 4.9,
-        proposedRate: 3500,
-        deliveryDays: 4,
-        pitch: 'I love your artisanal cotton kurtis! I have a high-converting styling series "Desk to Dinner" where I can feature 3 pastel outfits. 78% of my audience are working women looking for daily chic looks.',
-        portfolioLinks: ['https://instagram.com/p/sample1'],
-        status: 'accepted',
-        appliedAt: '2026-11-04T10:00:00Z'
-      },
-      {
-        id: 'app-sample-2',
-        campaignId: 'camp-1',
-        campaignTitle: 'Spring Pastel Handloom Collection Launch',
-        creatorId: 'user-creator-20',
-        creatorName: 'Nisha Bano',
-        creatorHandle: '@nisha_crafts',
-        creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-        creatorCategory: 'Fashion & Style',
-        creatorFollowers: 68000,
-        creatorRating: 5.0,
-        proposedRate: 1500,
-        deliveryDays: 3,
-        pitch: 'I create authentic handmade crafts and styling content. I can showcase your handcrafted handloom pieces with high organic engagement.',
-        portfolioLinks: ['https://instagram.com/p/crafts2'],
-        status: 'pending',
-        appliedAt: '2026-11-05T14:30:00Z'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [collaborations, setCollaborations] = useState<Collaboration[]>(() => {
     const saved = localStorage.getItem('colab_collaborations');
-    return saved ? JSON.parse(saved) : COLLABORATIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [sponsorships, setSponsorships] = useState<SponsorshipOpportunity[]>(() => {
     const saved = localStorage.getItem('colab_sponsorships');
-    return saved ? JSON.parse(saved) : SPONSORSHIPS;
+    return saved ? JSON.parse(saved) : [];
   });
 
-  const [creativeProfessionals] = useState<CreativeProfessional[]>(CREATIVE_PROFESSIONALS);
+  const [creativeProfessionals, setCreativeProfessionals] = useState<CreativeProfessional[]>(() => {
+    const saved = localStorage.getItem('colab_creative_professionals');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [adInventory, setAdInventory] = useState<AdInventoryItem[]>(() => {
     const saved = localStorage.getItem('colab_ad_inventory');
-    return saved ? JSON.parse(saved) : AD_INVENTORY;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [reviews, setReviews] = useState<Review[]>(() => {
     const saved = localStorage.getItem('colab_reviews');
-    return saved ? JSON.parse(saved) : REVIEWS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('colab_transactions');
-    return saved ? JSON.parse(saved) : TRANSACTIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [settings, setSettings] = useState<PlatformSettings>(() => {
     const saved = localStorage.getItem('colab_settings');
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+    return saved ? JSON.parse(saved) : DEFAULT_PLATFORM_SETTINGS;
   });
 
   const [conversations, setConversations] = useState<Conversation[]>(() => {
     const saved = localStorage.getItem('colab_conversations');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'conv-101',
-        participantIds: ['user-creator-1', 'user-biz-1'],
-        participantNames: {
-          'user-creator-1': 'Ananya Sharma',
-          'user-biz-1': 'Aroma Threads Boutique'
-        },
-        participantAvatars: {
-          'user-creator-1': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-          'user-biz-1': 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=400&q=80'
-        },
-        participantRoles: {
-          'user-creator-1': 'creator',
-          'user-biz-1': 'business'
-        },
-        lastMessage: 'I have uploaded the 4K draft preview to the deal room! Let me know if you would like any text overlay tweaks.',
-        lastMessageTime: '2026-11-12T16:22:00Z',
-        unreadCount: 1,
-        collaborationId: 'collab-101'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem('colab_messages');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'msg-1',
-        conversationId: 'conv-101',
-        senderId: 'user-biz-1',
-        senderName: 'Aroma Threads Boutique',
-        senderRole: 'business',
-        text: 'Hi Ananya! We are thrilled to work with you on our Spring Pastel launch. The kurti package has been dispatched to your Mumbai address.',
-        timestamp: '2026-11-06T10:00:00Z',
-        isRead: true
-      },
-      {
-        id: 'msg-2',
-        conversationId: 'conv-101',
-        senderId: 'user-creator-1',
-        senderName: 'Ananya Sharma',
-        senderRole: 'creator',
-        text: 'Received the package yesterday! The fabric quality and lilac color are stunning. I have planned a high-energy morning transition shoot.',
-        timestamp: '2026-11-08T14:15:00Z',
-        isRead: true
-      },
-      {
-        id: 'msg-3',
-        conversationId: 'conv-101',
-        senderId: 'user-creator-1',
-        senderName: 'Ananya Sharma',
-        senderRole: 'creator',
-        text: 'I have uploaded the 4K draft preview to the deal room! Let me know if you would like any text overlay tweaks.',
-        timestamp: '2026-11-12T16:22:00Z',
-        isRead: false
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [localAdChannels, setLocalAdChannels] = useState<LocalAdChannel[]>(() => {
     const saved = localStorage.getItem('colab_local_channels');
-    return saved ? JSON.parse(saved) : LOCAL_AD_CHANNELS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [creatorCollectives, setCreatorCollectives] = useState<CreatorCollective[]>(() => {
     const saved = localStorage.getItem('colab_creator_collectives');
-    return saved ? JSON.parse(saved) : CREATOR_COLLECTIVES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [affiliatePrograms, setAffiliatePrograms] = useState<AffiliateProgram[]>(() => {
     const saved = localStorage.getItem('colab_affiliate_programs');
-    return saved ? JSON.parse(saved) : AFFILIATE_PROGRAMS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [creatorAffiliateLinks, setCreatorAffiliateLinks] = useState<CreatorAffiliateLink[]>(() => {
     const saved = localStorage.getItem('colab_creator_affiliate_links');
-    return saved ? JSON.parse(saved) : CREATOR_AFFILIATE_LINKS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [bookingSlots, setBookingSlots] = useState<BookingSlot[]>(() => {
     const saved = localStorage.getItem('colab_booking_slots');
-    return saved ? JSON.parse(saved) : BOOKING_SLOTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [performanceAttributions, setPerformanceAttributions] = useState<PerformanceAttribution[]>(() => {
     const saved = localStorage.getItem('colab_performance_attributions');
-    return saved ? JSON.parse(saved) : PERFORMANCE_ATTRIBUTIONS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [sponsorRfps, setSponsorRfps] = useState<SponsorRequirementRFP[]>(() => {
     const saved = localStorage.getItem('colab_sponsor_rfps');
-    return saved ? JSON.parse(saved) : SPONSOR_RFPS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [structuredEnquiries, setStructuredEnquiries] = useState<StructuredCollaborationEnquiry[]>(() => {
     const saved = localStorage.getItem('colab_structured_enquiries');
-    return saved ? JSON.parse(saved) : STRUCTURED_ENQUIRIES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [negotiationQuotes, setNegotiationQuotes] = useState<NegotiationQuote[]>(() => {
     const saved = localStorage.getItem('colab_negotiation_quotes');
-    return saved ? JSON.parse(saved) : NEGOTIATION_QUOTES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -374,41 +265,96 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const bootstrap = await api.bootstrap();
         if (!isMounted || !bootstrap) return;
+        if (bootstrap.users && bootstrap.users.length > 0) {
+          setUsers(bootstrap.users);
+          localStorage.setItem('colab_users', JSON.stringify(bootstrap.users));
+        }
         if (bootstrap.creators && bootstrap.creators.length > 0) {
           setCreators(bootstrap.creators);
+          localStorage.setItem('colab_creators', JSON.stringify(bootstrap.creators));
+        }
+        if (bootstrap.businesses && bootstrap.businesses.length > 0) {
+          setBusinesses(bootstrap.businesses);
+          localStorage.setItem('colab_businesses', JSON.stringify(bootstrap.businesses));
         }
         if (bootstrap.campaigns && bootstrap.campaigns.length > 0) {
           setCampaigns(bootstrap.campaigns);
+          localStorage.setItem('colab_campaigns', JSON.stringify(bootstrap.campaigns));
+        }
+        if (bootstrap.applications && bootstrap.applications.length > 0) {
+          setApplications(bootstrap.applications);
+          localStorage.setItem('colab_applications', JSON.stringify(bootstrap.applications));
         }
         if (bootstrap.collaborations && bootstrap.collaborations.length > 0) {
           setCollaborations(bootstrap.collaborations);
+          localStorage.setItem('colab_collaborations', JSON.stringify(bootstrap.collaborations));
         }
         if (bootstrap.sponsorships && bootstrap.sponsorships.length > 0) {
           setSponsorships(bootstrap.sponsorships);
-        }
-        if (bootstrap.bookingSlots && bootstrap.bookingSlots.length > 0) {
-          setBookingSlots(bootstrap.bookingSlots);
-        }
-        if (bootstrap.structuredEnquiries && bootstrap.structuredEnquiries.length > 0) {
-          setStructuredEnquiries(bootstrap.structuredEnquiries);
-        }
-        if (bootstrap.negotiationQuotes && bootstrap.negotiationQuotes.length > 0) {
-          setNegotiationQuotes(bootstrap.negotiationQuotes);
+          localStorage.setItem('colab_sponsorships', JSON.stringify(bootstrap.sponsorships));
         }
         if (bootstrap.sponsorRfps && bootstrap.sponsorRfps.length > 0) {
           setSponsorRfps(bootstrap.sponsorRfps);
+          localStorage.setItem('colab_sponsor_rfps', JSON.stringify(bootstrap.sponsorRfps));
+        }
+        if (bootstrap.creativeProfessionals && bootstrap.creativeProfessionals.length > 0) {
+          setCreativeProfessionals(bootstrap.creativeProfessionals);
+          localStorage.setItem('colab_creative_professionals', JSON.stringify(bootstrap.creativeProfessionals));
+        }
+        if (bootstrap.adInventory && bootstrap.adInventory.length > 0) {
+          setAdInventory(bootstrap.adInventory);
+          localStorage.setItem('colab_ad_inventory', JSON.stringify(bootstrap.adInventory));
+        }
+        if (bootstrap.localAdChannels && bootstrap.localAdChannels.length > 0) {
+          setLocalAdChannels(bootstrap.localAdChannels);
+          localStorage.setItem('colab_local_channels', JSON.stringify(bootstrap.localAdChannels));
+        }
+        if (bootstrap.creatorCollectives && bootstrap.creatorCollectives.length > 0) {
+          setCreatorCollectives(bootstrap.creatorCollectives);
+          localStorage.setItem('colab_creator_collectives', JSON.stringify(bootstrap.creatorCollectives));
+        }
+        if (bootstrap.affiliatePrograms && bootstrap.affiliatePrograms.length > 0) {
+          setAffiliatePrograms(bootstrap.affiliatePrograms);
+          localStorage.setItem('colab_affiliate_programs', JSON.stringify(bootstrap.affiliatePrograms));
+        }
+        if (bootstrap.creatorAffiliateLinks && bootstrap.creatorAffiliateLinks.length > 0) {
+          setCreatorAffiliateLinks(bootstrap.creatorAffiliateLinks);
+          localStorage.setItem('colab_creator_affiliate_links', JSON.stringify(bootstrap.creatorAffiliateLinks));
+        }
+        if (bootstrap.bookingSlots && bootstrap.bookingSlots.length > 0) {
+          setBookingSlots(bootstrap.bookingSlots);
+          localStorage.setItem('colab_booking_slots', JSON.stringify(bootstrap.bookingSlots));
+        }
+        if (bootstrap.structuredEnquiries && bootstrap.structuredEnquiries.length > 0) {
+          setStructuredEnquiries(bootstrap.structuredEnquiries);
+          localStorage.setItem('colab_structured_enquiries', JSON.stringify(bootstrap.structuredEnquiries));
+        }
+        if (bootstrap.negotiationQuotes && bootstrap.negotiationQuotes.length > 0) {
+          setNegotiationQuotes(bootstrap.negotiationQuotes);
+          localStorage.setItem('colab_negotiation_quotes', JSON.stringify(bootstrap.negotiationQuotes));
         }
         if (bootstrap.conversations && bootstrap.conversations.length > 0) {
           setConversations(bootstrap.conversations);
+          localStorage.setItem('colab_conversations', JSON.stringify(bootstrap.conversations));
         }
         if (bootstrap.messages && bootstrap.messages.length > 0) {
           setMessages(bootstrap.messages);
+          localStorage.setItem('colab_messages', JSON.stringify(bootstrap.messages));
+        }
+        if (bootstrap.reviews && bootstrap.reviews.length > 0) {
+          setReviews(bootstrap.reviews);
+          localStorage.setItem('colab_reviews', JSON.stringify(bootstrap.reviews));
+        }
+        if (bootstrap.transactions && bootstrap.transactions.length > 0) {
+          setTransactions(bootstrap.transactions);
+          localStorage.setItem('colab_transactions', JSON.stringify(bootstrap.transactions));
         }
         if (bootstrap.settings) {
           setSettings(bootstrap.settings);
+          localStorage.setItem('colab_settings', JSON.stringify(bootstrap.settings));
         }
       } catch (err) {
-        console.warn('[co-lab] Using local storage/mock fallback:', err);
+        console.warn('[co-lab] Database hydration notice:', err);
       }
     };
     hydrateFromDatabase();
@@ -441,12 +387,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Actions
   const login = (user?: UserProfile) => {
-    const target = user || users[0] || DEMO_USERS[0];
-    setCurrentUser(target);
-    setIsLoggedIn(true);
-    localStorage.setItem('colab_is_logged_in', 'true');
-    localStorage.setItem('colab_current_user', JSON.stringify(target));
-    setShowLoginModal(false);
+    const target = user || users[0];
+    if (target) {
+      setCurrentUser(target);
+      setIsLoggedIn(true);
+      localStorage.setItem('colab_is_logged_in', 'true');
+      localStorage.setItem('colab_current_user', JSON.stringify(target));
+      setShowLoginModal(false);
+    }
   };
 
   const logout = () => {
@@ -527,7 +475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createCampaign = (campaignData: Omit<Campaign, 'id' | 'businessId' | 'businessName' | 'businessLogo' | 'businessVerified' | 'applicantsCount' | 'shortlistedCount' | 'createdAt'>): Campaign => {
-    const activeUser = currentUser || users[2] || DEMO_USERS[2];
+    const activeUser = currentUser || users[2] || users[0];
     const newCampaign: Campaign = {
       ...campaignData,
       id: `camp-${Date.now()}`,
@@ -573,7 +521,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fee = Math.round(agreedAmount * (settings.platformCommissionPercent / 100));
     const payout = agreedAmount - fee;
 
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0];
     const newCollab: Collaboration = {
       id: `collab-${Date.now()}`,
       campaignId: app.campaignId,
@@ -762,7 +710,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     attachmentType?: Message['attachmentType'],
     attachmentMetadata?: any
   ) => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0];
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
       conversationId,
@@ -789,7 +737,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendVoiceNote = (conversationId: string, durationSeconds: number = 18) => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0];
     const newMsg: Message = {
       id: `msg-voice-${Date.now()}`,
       conversationId,
@@ -814,7 +762,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendStructuredEnquiry = (enquiryData: Omit<StructuredCollaborationEnquiry, 'id' | 'createdAt' | 'status'>): string => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0];
     const targetId = enquiryData.targetId || enquiryData.creatorId || '';
     const senderId = enquiryData.senderId || enquiryData.businessId || activeUser.id;
     const targetUser = creators.find(c => c.id === targetId) || users.find(u => u.id === targetId);
@@ -867,7 +815,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const sendNegotiationQuote = (quoteData: Omit<NegotiationQuote, 'id' | 'createdAt' | 'status' | 'history'>): NegotiationQuote => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0];
     const newQuote: NegotiationQuote = {
       id: `quote-${Date.now()}`,
       status: 'pending',
@@ -922,7 +870,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     counterAmount?: number,
     note?: string
   ) => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0] || {
+      id: 'guest-user',
+      name: 'Guest User',
+      email: 'guest@colab.local',
+      role: 'business',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      bio: 'Guest visitor'
+    };
     const quote = negotiationQuotes.find(q => q.id === quoteId);
     if (!quote) return;
 
@@ -1081,7 +1036,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     conditions: string,
     clientNote?: string
   ): Collaboration => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0] || {
+      id: 'guest-user',
+      name: 'Guest User',
+      email: 'guest@colab.local',
+      role: 'business',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      bio: 'Guest visitor'
+    };
     const targetCreator = creators.find(c => c.id === creatorId) || users.find(u => u.id === creatorId);
     const convId = createOrGetConversation(creatorId);
 
@@ -1163,7 +1125,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createOrGetConversation = (targetUserId: string, collaborationId?: string): string => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0] || {
+      id: 'guest-user',
+      name: 'Guest User',
+      email: 'guest@colab.local',
+      role: 'business',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      bio: 'Guest visitor'
+    };
     const existing = conversations.find(c =>
       c.participantIds.includes(activeUser.id) && c.participantIds.includes(targetUserId)
     );
@@ -1243,7 +1212,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createAdInventoryItem = (data: Omit<AdInventoryItem, 'id' | 'slotsRemaining' | 'creatorId' | 'creatorName' | 'creatorAvatar'>): AdInventoryItem => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0] || {
+      id: 'guest-user',
+      name: 'Guest User',
+      email: 'guest@colab.local',
+      role: 'business',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      bio: 'Guest visitor'
+    };
     const newItem: AdInventoryItem = {
       id: `ad-inv-${Date.now()}`,
       creatorId: activeUser.id,
@@ -1269,7 +1245,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createSponsorshipOpportunity = (data: Omit<SponsorshipOpportunity, 'id' | 'proposalCount' | 'verifiedOrganiser' | 'organiserId' | 'organiserName' | 'organiserAvatar'>): SponsorshipOpportunity => {
-    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const activeUser = currentUser || users[0] || {
+      id: 'guest-user',
+      name: 'Guest User',
+      email: 'guest@colab.local',
+      role: 'business',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      bio: 'Guest visitor'
+    };
     const newSpons: SponsorshipOpportunity = {
       id: `spons-${Date.now()}`,
       organiserId: activeUser.id,

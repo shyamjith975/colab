@@ -2,7 +2,7 @@
  * co-lab SQLite Database Initialization & Seeding Script
  * 
  * Creates 'colab.db' using Node.js built-in 'node:sqlite' DatabaseSync.
- * Seeds all mock data from src/data/mockData.ts into relational tables
+ * Seeds relational database tables in colab.db from scripts/seedData.json
  * with full-fidelity JSON preservation.
  */
 
@@ -381,16 +381,12 @@ export async function initDatabase(verbose = true) {
     console.log('[co-lab Database] All 23 SQLite tables and indexes created successfully.');
   }
 
-  // 2. LOAD DATA FROM src/data/mockData.ts VIA VITE RUNTIME
-  const { createServer } = await import('vite');
-  const vite = await createServer({
-    root: rootDir,
-    server: { middlewareMode: true },
-    appType: 'custom'
-  });
-
-  const mockData = await vite.ssrLoadModule('./src/data/mockData.ts');
-  await vite.close();
+  // 2. LOAD SEED DATA FROM scripts/seedData.json
+  const seedJsonPath = path.join(rootDir, 'scripts', 'seedData.json');
+  let seedData = {};
+  if (fs.existsSync(seedJsonPath)) {
+    seedData = JSON.parse(fs.readFileSync(seedJsonPath, 'utf8'));
+  }
 
   // Helper to insert record with standard columns and full raw JSON
   const insertOne = (table, row, standardMapping = {}) => {
@@ -403,14 +399,41 @@ export async function initDatabase(verbose = true) {
   };
 
   // Seed Settings
+  const initialSettings = seedData.settings?.[0]?.data || {
+    platformCommissionPercent: 8,
+    featuredCampaignFee: 1999,
+    minCampaignBudget: 1000,
+    currencySymbol: '₹',
+    currencyCode: 'INR',
+    taxGstRate: 18,
+    autoEscrowReleaseDays: 7,
+    categories: [
+      'Fashion & Style',
+      'Tech & Gadgets',
+      'Food & Beverage',
+      'Beauty & Skincare',
+      'Fitness & Health',
+      'Travel & Hospitality',
+      'Finance & Crypto',
+      'Gaming & Esports',
+      'Education & Careers',
+      'Comedy & Entertainment',
+      'Parenting & Family',
+      'Automotive & Bikes',
+      'Photography & Film',
+      'Events & Lifestyle'
+    ],
+    maintenanceMode: false
+  };
+
   db.prepare('INSERT OR REPLACE INTO settings (id, data) VALUES (?, ?)').run(
     'platform_settings',
-    JSON.stringify(mockData.INITIAL_SETTINGS)
+    JSON.stringify(initialSettings)
   );
 
   // Seed Users with SHA-256 password hash (default password: Colab@2026)
   const defaultPasswordHash = crypto.createHash('sha256').update('Colab@2026').digest('hex');
-  for (const u of mockData.DEMO_USERS) {
+  for (const u of (seedData.users || [])) {
     const userWithHash = { ...u, password_hash: defaultPasswordHash };
     insertOne('users', userWithHash, {
       email: u.email,
@@ -426,7 +449,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Creators
-  for (const c of mockData.CREATORS) {
+  for (const c of (seedData.creators || [])) {
     insertOne('creators', c, {
       handle: c.handle,
       name: c.name,
@@ -447,7 +470,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Businesses
-  for (const b of mockData.BUSINESSES) {
+  for (const b of (seedData.businesses || [])) {
     insertOne('businesses', b, {
       name: b.name,
       industry: b.industry,
@@ -461,16 +484,16 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Campaigns
-  for (const camp of mockData.CAMPAIGNS) {
+  for (const camp of (seedData.campaigns || [])) {
     insertOne('campaigns', camp, {
       title: camp.title,
       businessId: camp.businessId,
       businessName: camp.businessName,
       category: camp.category,
       status: camp.status,
-      budgetMin: camp.budget?.minAmount || 0,
-      budgetMax: camp.budget?.maxAmount || 0,
-      totalBudget: camp.budget?.totalBudget || 0,
+      budgetMin: camp.budgetMin || camp.budget?.minAmount || 0,
+      budgetMax: camp.budgetMax || camp.budget?.maxAmount || 0,
+      totalBudget: camp.totalBudget || camp.budget?.totalBudget || 0,
       applicantsCount: camp.applicantsCount || 0,
       shortlistedCount: camp.shortlistedCount || 0,
       createdAt: camp.createdAt
@@ -478,7 +501,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Sponsorships
-  for (const s of mockData.SPONSORSHIPS) {
+  for (const s of (seedData.sponsorships || [])) {
     insertOne('sponsorships', s, {
       title: s.title,
       organizerName: s.organiserName || s.organizerName || '',
@@ -491,7 +514,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Sponsor RFPs
-  for (const rfp of mockData.SPONSOR_RFPS || []) {
+  for (const rfp of (seedData.sponsor_rfps || [])) {
     insertOne('sponsor_rfps', rfp, {
       sponsorId: rfp.sponsorId,
       sponsorName: rfp.sponsorName,
@@ -506,7 +529,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Creative Professionals
-  for (const p of mockData.CREATIVE_PROFESSIONALS) {
+  for (const p of (seedData.creative_professionals || [])) {
     insertOne('creative_professionals', p, {
       name: p.name,
       role: p.role,
@@ -517,7 +540,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Ad Inventory
-  for (const inv of mockData.AD_INVENTORY) {
+  for (const inv of (seedData.ad_inventory || [])) {
     insertOne('ad_inventory', inv, {
       creatorId: inv.creatorId || null,
       creatorName: inv.creatorName || null,
@@ -529,7 +552,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Collaborations
-  for (const col of mockData.COLLABORATIONS) {
+  for (const col of (seedData.collaborations || [])) {
     insertOne('collaborations', col, {
       campaignId: col.campaignId,
       campaignTitle: col.campaignTitle,
@@ -548,7 +571,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Reviews
-  for (const r of mockData.REVIEWS) {
+  for (const r of (seedData.reviews || [])) {
     insertOne('reviews', r, {
       collaborationId: r.collaborationId,
       reviewerId: r.reviewerId,
@@ -563,7 +586,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Transactions
-  for (const t of mockData.TRANSACTIONS) {
+  for (const t of (seedData.transactions || [])) {
     insertOne('transactions', t, {
       collaborationId: t.collaborationId || null,
       amount: t.amount,
@@ -574,7 +597,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Local Ad Channels
-  for (const l of mockData.LOCAL_AD_CHANNELS) {
+  for (const l of (seedData.local_ad_channels || [])) {
     insertOne('local_ad_channels', l, {
       channelName: l.channelName,
       platform: l.platform,
@@ -587,7 +610,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Creator Collectives
-  for (const col of mockData.CREATOR_COLLECTIVES) {
+  for (const col of (seedData.creator_collectives || [])) {
     insertOne('creator_collectives', col, {
       title: col.title,
       region: col.region,
@@ -598,7 +621,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Affiliate Programs
-  for (const ap of mockData.AFFILIATE_PROGRAMS) {
+  for (const ap of (seedData.affiliate_programs || [])) {
     insertOne('affiliate_programs', ap, {
       brandName: ap.brandName,
       productName: ap.productName,
@@ -608,11 +631,11 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Creator Affiliate Links
-  for (const al of mockData.CREATOR_AFFILIATE_LINKS) {
+  for (const al of (seedData.creator_affiliate_links || [])) {
     insertOne('creator_affiliate_links', al, {
       programId: al.programId,
       creatorId: al.creatorId,
-      referralCode: al.referralCode,
+      referralCode: al.referralCode || al.uniqueCode,
       couponCode: al.couponCode,
       clicks: al.clicks,
       conversions: al.conversions,
@@ -621,7 +644,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Booking Slots
-  for (const bs of mockData.BOOKING_SLOTS) {
+  for (const bs of (seedData.booking_slots || [])) {
     insertOne('booking_slots', bs, {
       creatorId: bs.creatorId,
       serviceTitle: bs.serviceTitle,
@@ -638,7 +661,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Structured Collaboration Enquiries
-  for (const se of mockData.STRUCTURED_ENQUIRIES || []) {
+  for (const se of (seedData.structured_enquiries || [])) {
     insertOne('structured_enquiries', se, {
       conversationId: se.conversationId || 'conv-101',
       senderId: se.senderId,
@@ -657,7 +680,7 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Formal Negotiation Quotes
-  for (const nq of mockData.NEGOTIATION_QUOTES || []) {
+  for (const nq of (seedData.negotiation_quotes || [])) {
     insertOne('negotiation_quotes', nq, {
       conversationId: nq.conversationId,
       fromId: nq.fromId,
@@ -675,11 +698,11 @@ export async function initDatabase(verbose = true) {
   }
 
   // Seed Performance Attributions
-  for (const pa of mockData.PERFORMANCE_ATTRIBUTIONS || []) {
+  for (const pa of (seedData.performance_attributions || [])) {
     insertOne('performance_attributions', pa, {
       campaignId: pa.campaignId,
       creatorId: pa.creatorId,
-      trackingUrl: pa.trackingUrl,
+      trackingUrl: pa.trackingUrl || pa.trackableLink,
       couponCode: pa.couponCode,
       verifiedPlatformData: pa.verifiedPlatformData ? 1 : 0,
       attributedSales: pa.attributedSales || 0,
@@ -833,7 +856,7 @@ export async function initDatabase(verbose = true) {
       senderRole: 'creator',
       text: '💼 Formal Quotation: ₹7,000 (1x 60s Reel, 2x Stories with link, High-res stills)',
       attachmentType: 'quote',
-      attachmentMetadata: mockData.NEGOTIATION_QUOTES?.[0] || null,
+      attachmentMetadata: seedData.negotiation_quotes?.[0] || null,
       timestamp: '2026-11-14T11:30:00Z',
       isRead: 1
     }

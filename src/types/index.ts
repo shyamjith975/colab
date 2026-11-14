@@ -529,3 +529,30 @@ export interface SponsorRequirementRFP {
   deadline: string;
 }
 
+export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
+  platformCommissionPercent: 8,
+  featuredCampaignFee: 1999,
+  minCampaignBudget: 1000,
+  currencySymbol: '₹',
+  currencyCode: 'INR',
+  taxGstRate: 18,
+  autoEscrowReleaseDays: 7,
+  categories: [
+    'Fashion & Style',
+    'Tech & Gadgets',
+    'Food & Beverage',
+    'Beauty & Skincare',
+    'Fitness & Health',
+    'Travel & Hospitality',
+    'Finance & Crypto',
+    'Gaming & Esports',
+    'Education & Careers',
+    'Comedy & Entertainment',
+    'Parenting & Family',
+    'Automotive & Bikes',
+    'Photography & Film',
+    'Events & Lifestyle'
+  ],
+  maintenanceMode: false
+};
+

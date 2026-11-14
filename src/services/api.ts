@@ -28,26 +28,9 @@ import {
   AdInventoryItem,
   Review,
   Transaction,
-  PlatformSettings
+  PlatformSettings,
+  DEFAULT_PLATFORM_SETTINGS
 } from '../types';
-import {
-  CREATORS,
-  CAMPAIGNS,
-  COLLABORATIONS,
-  SPONSORSHIPS,
-  SPONSOR_RFPS,
-  LOCAL_AD_CHANNELS,
-  CREATOR_COLLECTIVES,
-  AFFILIATE_PROGRAMS,
-  CREATOR_AFFILIATE_LINKS,
-  BOOKING_SLOTS,
-  STRUCTURED_ENQUIRIES,
-  NEGOTIATION_QUOTES,
-  DEMO_USERS,
-  REVIEWS,
-  TRANSACTIONS,
-  INITIAL_SETTINGS
-} from '../data/mockData';
 import { clientLogin, clientSignup } from './clientAuth';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api/v1';
@@ -82,29 +65,29 @@ export const api = {
   // 1. BOOTSTRAP API: Fetch all tables in 1 call from colab.db
   async bootstrap() {
     return fetchJson('/bootstrap', { method: 'GET' }, {
-      users: DEMO_USERS,
-      creators: CREATORS,
+      users: [],
+      creators: [],
       businesses: [],
-      campaigns: CAMPAIGNS,
+      campaigns: [],
       applications: [],
-      collaborations: COLLABORATIONS,
-      sponsorships: SPONSORSHIPS,
-      sponsorRfps: SPONSOR_RFPS,
+      collaborations: [],
+      sponsorships: [],
+      sponsorRfps: [],
       creativeProfessionals: [],
       adInventory: [],
-      reviews: REVIEWS,
-      transactions: TRANSACTIONS,
-      localAdChannels: LOCAL_AD_CHANNELS,
-      creatorCollectives: CREATOR_COLLECTIVES,
-      affiliatePrograms: AFFILIATE_PROGRAMS,
-      creatorAffiliateLinks: CREATOR_AFFILIATE_LINKS,
-      bookingSlots: BOOKING_SLOTS,
-      structuredEnquiries: STRUCTURED_ENQUIRIES,
-      negotiationQuotes: NEGOTIATION_QUOTES,
+      reviews: [],
+      transactions: [],
+      localAdChannels: [],
+      creatorCollectives: [],
+      affiliatePrograms: [],
+      creatorAffiliateLinks: [],
+      bookingSlots: [],
+      structuredEnquiries: [],
+      negotiationQuotes: [],
       performanceAttributions: [],
       conversations: [],
       messages: [],
-      settings: INITIAL_SETTINGS,
+      settings: DEFAULT_PLATFORM_SETTINGS,
       stats: { database: 'colab.db', connected: false }
     });
   },
@@ -133,18 +116,18 @@ export const api = {
   // 3. CREATORS API
   creators: {
     async getAll(): Promise<CreatorProfile[]> {
-      return fetchJson<CreatorProfile[]>('/creators', { method: 'GET' }, CREATORS);
+      return fetchJson<CreatorProfile[]>('/creators', { method: 'GET' }, []);
     },
 
     async getById(id: string): Promise<CreatorProfile | null> {
-      return fetchJson<CreatorProfile | null>(`/creators/${id}`, { method: 'GET' }, CREATORS.find(c => c.id === id) || null);
+      return fetchJson<CreatorProfile | null>(`/creators/${id}`, { method: 'GET' }, null);
     }
   },
 
   // 4. CAMPAIGNS API
   campaigns: {
     async getAll(): Promise<Campaign[]> {
-      return fetchJson<Campaign[]>('/campaigns', { method: 'GET' }, CAMPAIGNS);
+      return fetchJson<Campaign[]>('/campaigns', { method: 'GET' }, []);
     },
 
     async create(campaign: Partial<Campaign>): Promise<Campaign> {
@@ -172,7 +155,7 @@ export const api = {
   // 5. STRUCTURED ENQUIRIES API
   enquiries: {
     async getAll(): Promise<StructuredCollaborationEnquiry[]> {
-      return fetchJson<StructuredCollaborationEnquiry[]>('/structured-enquiries', { method: 'GET' }, STRUCTURED_ENQUIRIES);
+      return fetchJson<StructuredCollaborationEnquiry[]>('/structured-enquiries', { method: 'GET' }, []);
     },
 
     async create(enquiry: Partial<StructuredCollaborationEnquiry>): Promise<StructuredCollaborationEnquiry> {
@@ -186,7 +169,7 @@ export const api = {
   // 6. FORMAL NEGOTIATION QUOTES API
   quotes: {
     async getAll(): Promise<NegotiationQuote[]> {
-      return fetchJson<NegotiationQuote[]>('/negotiation-quotes', { method: 'GET' }, NEGOTIATION_QUOTES);
+      return fetchJson<NegotiationQuote[]>('/negotiation-quotes', { method: 'GET' }, []);
     },
 
     async create(quote: Partial<NegotiationQuote>): Promise<NegotiationQuote> {
@@ -200,7 +183,7 @@ export const api = {
   // 7. BOOKING SLOTS API
   bookingSlots: {
     async getAll(): Promise<BookingSlot[]> {
-      return fetchJson<BookingSlot[]>('/booking-slots', { method: 'GET' }, BOOKING_SLOTS);
+      return fetchJson<BookingSlot[]>('/booking-slots', { method: 'GET' }, []);
     },
 
     async book(slotId: string, clientName: string): Promise<BookingSlot | null> {
@@ -214,7 +197,7 @@ export const api = {
   // 8. COLLABORATIONS & SMART DEAL ROOMS
   collaborations: {
     async getAll(): Promise<Collaboration[]> {
-      return fetchJson<Collaboration[]>('/collaborations', { method: 'GET' }, COLLABORATIONS);
+      return fetchJson<Collaboration[]>('/collaborations', { method: 'GET' }, []);
     },
 
     async create(collab: Partial<Collaboration>): Promise<Collaboration> {
@@ -247,7 +230,7 @@ export const api = {
   // 10. SPONSOR RFPS
   sponsorRfps: {
     async getAll(): Promise<SponsorRequirementRFP[]> {
-      return fetchJson<SponsorRequirementRFP[]>('/sponsor-rfps', { method: 'GET' }, SPONSOR_RFPS);
+      return fetchJson<SponsorRequirementRFP[]>('/sponsor-rfps', { method: 'GET' }, []);
     },
 
     async create(rfp: Partial<SponsorRequirementRFP>): Promise<SponsorRequirementRFP> {
@@ -330,7 +313,7 @@ export const api = {
   // 13. LOCAL ADS
   localAds: {
     async getAll(): Promise<LocalAdChannel[]> {
-      return fetchJson<LocalAdChannel[]>('/local-ads', { method: 'GET' }, LOCAL_AD_CHANNELS);
+      return fetchJson<LocalAdChannel[]>('/local-ads', { method: 'GET' }, []);
     },
 
     async create(channel: Partial<LocalAdChannel>): Promise<LocalAdChannel> {
@@ -344,7 +327,7 @@ export const api = {
   // 14. SPONSORSHIPS
   sponsorships: {
     async getAll(): Promise<SponsorshipOpportunity[]> {
-      return fetchJson<SponsorshipOpportunity[]>('/sponsorships', { method: 'GET' }, SPONSORSHIPS);
+      return fetchJson<SponsorshipOpportunity[]>('/sponsorships', { method: 'GET' }, []);
     },
 
     async create(sponsorship: Partial<SponsorshipOpportunity>): Promise<SponsorshipOpportunity> {

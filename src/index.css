@@ -3,10 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
   html, body {
     @apply font-sans antialiased text-slate-900 bg-slate-50;
-    max-width: 100%;
+    width: 100%;
+    max-width: 100vw;
     overflow-x: hidden;
+    position: relative;
+  }
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    min-height: 100vh;
   }
 }
 

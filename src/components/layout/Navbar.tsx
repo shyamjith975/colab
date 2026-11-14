@@ -180,21 +180,21 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white text-xs py-2 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white text-xs py-2 px-4 sm:px-6 lg:px-8 w-full overflow-hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
               {isLoggedIn ? 'Demo Mode' : 'Guest Mode'}
             </span>
             <button
               onClick={() => setShowDbExplorer(true)}
-              className="flex items-center space-x-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition cursor-pointer"
+              className="flex items-center space-x-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition cursor-pointer shrink-0"
               title="Open Live colab.db SQLite Explorer & Query Test Runner"
             >
               <Database className="w-3 h-3 text-emerald-400" />
               <span>colab.db (SQLite)</span>
             </button>
-            <span className="hidden md:inline text-slate-200 text-xs">
+            <span className="hidden md:inline text-slate-200 text-xs truncate">
               {isLoggedIn
                 ? 'Switch roles instantly to preview Creator, Brand, Deal Room, or Admin operations.'
                 : 'Browse as Guest • Log in to view full creator media kits, rate cards, and collaborate.'}
@@ -203,7 +203,7 @@ export const Navbar: React.FC = () => {
 
           {/* Quick Role Switcher Pill or Login CTA */}
           {isLoggedIn && currentUser ? (
-            <div className="relative" ref={roleDropdownRef}>
+            <div className="relative shrink-0" ref={roleDropdownRef}>
               <button
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                 className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs transition font-medium border border-white/20"
@@ -277,32 +277,32 @@ export const Navbar: React.FC = () => {
 
       {/* Main Nav with clean responsive layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex items-center justify-between h-16 sm:h-18 w-full">
+        <div className="flex items-center justify-between h-16 sm:h-18 w-full gap-2">
           {/* Logo & Desktop Nav Links */}
-          <div className="flex items-center space-x-4 xl:space-x-6 shrink-0">
+          <div className="flex items-center space-x-2.5 xl:space-x-5 min-w-0">
             <Link to="/" className="flex items-center space-x-2 group shrink-0 pr-1">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
-                <span className="text-white font-extrabold text-xl tracking-tighter">co</span>
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
+                <span className="text-white font-extrabold text-lg sm:text-xl tracking-tighter">co</span>
               </div>
               <div className="flex items-center space-x-1.5 whitespace-nowrap">
-                <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
+                <span className="font-extrabold text-lg sm:text-2xl tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
                   co-lab
                 </span>
-                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md hidden sm:inline-block">
+                <span className="text-[10px] font-bold tracking-wider text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md hidden xl:inline-block">
                   Marketplace
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links (All tabs directly visible on tab bar) */}
-            <nav className="hidden lg:flex items-center space-x-1 xl:space-x-1.5">
+            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
               {desktopNavTabs.map((tab) => (
                 <Link
                   key={tab.path}
                   to={tab.path}
-                  className={`px-2.5 xl:px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold transition flex items-center space-x-1 whitespace-nowrap shrink-0 ${
+                  className={`px-2 xl:px-2.5 py-1.5 rounded-xl text-xs xl:text-sm font-semibold transition flex items-center space-x-1 whitespace-nowrap shrink-0 ${
                     isActive(tab.path)
-                      ? 'text-indigo-600 bg-indigo-50/90 font-bold shadow-xs'
+                      ? 'text-indigo-600 bg-indigo-50 font-bold shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
@@ -318,16 +318,16 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Search bar & Right Actions */}
-          <div className="hidden md:flex items-center space-x-2.5 lg:space-x-3 shrink-0">
+          <div className="hidden md:flex items-center space-x-2 xl:space-x-3 shrink-0">
             {/* Search Input (Responsive width) */}
-            <div className="relative w-24 md:w-32 lg:w-36 focus-within:w-44 transition-all duration-200">
-              <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" />
+            <div className="relative w-20 md:w-28 lg:w-32 xl:w-36 focus-within:w-44 transition-all duration-200">
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
+                className="w-full pl-7 pr-2.5 py-1.5 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
               />
             </div>
 
@@ -338,10 +338,10 @@ export const Navbar: React.FC = () => {
                 {currentUser.role === 'sponsor' && (
                   <Link
                     to="/sponsor-requirements"
-                    className="inline-flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-amber-200 shrink-0"
+                    className="inline-flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-slate-950 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-amber-200 shrink-0"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Post Sponsor RFP</span>
+                    <span>Post<span className="hidden xl:inline"> RFP</span></span>
                   </Link>
                 )}
 
@@ -349,10 +349,10 @@ export const Navbar: React.FC = () => {
                 {(currentUser.role === 'business' || currentUser.role === 'agency') && (
                   <Link
                     to="/create-campaign"
-                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Post Campaign</span>
+                    <span>Post<span className="hidden xl:inline"> Campaign</span></span>
                   </Link>
                 )}
 
@@ -360,7 +360,7 @@ export const Navbar: React.FC = () => {
                 {currentUser.role === 'creator' && (
                   <Link
                     to="/campaigns"
-                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Find Deals</span>
@@ -371,10 +371,10 @@ export const Navbar: React.FC = () => {
                 {currentUser.role === 'organiser' && (
                   <Link
                     to="/sponsorships"
-                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
+                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition hover:shadow-indigo-200 shrink-0"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
-                    <span>List Event</span>
+                    <span>List<span className="hidden xl:inline"> Event</span></span>
                   </Link>
                 )}
 
