@@ -23,7 +23,9 @@ import {
   BookingSlot,
   PerformanceAttribution,
   ProfessionalSubProfile,
-  SponsorRequirementRFP
+  SponsorRequirementRFP,
+  StructuredCollaborationEnquiry,
+  NegotiationQuote
 } from '../types';
 import {
   DEMO_USERS,
@@ -43,7 +45,9 @@ import {
   CREATOR_AFFILIATE_LINKS,
   BOOKING_SLOTS,
   PERFORMANCE_ATTRIBUTIONS,
-  SPONSOR_RFPS
+  SPONSOR_RFPS,
+  STRUCTURED_ENQUIRIES,
+  NEGOTIATION_QUOTES
 } from '../data/mockData';
 
 interface AppContextType {
@@ -76,12 +80,15 @@ interface AppContextType {
   bookingSlots: BookingSlot[];
   performanceAttributions: PerformanceAttribution[];
   sponsorRfps: SponsorRequirementRFP[];
+  structuredEnquiries: StructuredCollaborationEnquiry[];
+  negotiationQuotes: NegotiationQuote[];
   
   // Actions
   createSponsorRfp: (rfp: Omit<SponsorRequirementRFP, 'id' | 'sponsorId' | 'sponsorName' | 'sponsorLogo' | 'proposalsCount' | 'createdAt'>) => SponsorRequirementRFP;
   switchSubProfile: (subProfileId: string) => void;
   createOrUpdateSubProfile: (profile: ProfessionalSubProfile) => void;
   bookConsultationSlot: (slotId: string, clientName: string) => void;
+  bookServiceWithConditions: (creatorId: string, slotId: string, serviceTitle: string, date: string, timeSlot: string, price: number, conditions: string, clientNote?: string) => Collaboration;
   joinAffiliateProgram: (programId: string) => CreatorAffiliateLink;
   simulateAffiliateOrder: (linkId: string, orderValue: number) => void;
   bookLocalAdBundle: (channelIds: string[], campaignTitle: string, totalAmount: number) => Collaboration;
@@ -95,7 +102,12 @@ interface AppContextType {
   approveDeliverable: (collabId: string, deliverableId: string) => void;
   releaseEscrowPayment: (collabId: string) => void;
   addReview: (review: Omit<Review, 'id' | 'createdAt' | 'verifiedCollaboration'>) => void;
-  sendMessage: (conversationId: string, text: string, attachmentUrl?: string) => void;
+  sendMessage: (conversationId: string, text: string, attachmentUrl?: string, attachmentType?: Message['attachmentType'], attachmentMetadata?: any) => void;
+  sendVoiceNote: (conversationId: string, durationSeconds?: number) => void;
+  sendStructuredEnquiry: (enquiryData: Omit<StructuredCollaborationEnquiry, 'id' | 'createdAt' | 'status'>) => string;
+  sendNegotiationQuote: (quoteData: Omit<NegotiationQuote, 'id' | 'createdAt' | 'status' | 'history'>) => NegotiationQuote;
+  respondToQuote: (quoteId: string, action: 'accept' | 'counter' | 'reject', counterAmount?: number, note?: string) => void;
+  markConversationAsRead: (conversationId: string) => void;
   createOrGetConversation: (targetUserId: string, collaborationId?: string) => string;
   updateSettings: (newSettings: Partial<PlatformSettings>) => void;
   toggleUserVerification: (userId: string) => void;
@@ -316,12 +328,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : SPONSOR_RFPS;
   });
 
+  const [structuredEnquiries, setStructuredEnquiries] = useState<StructuredCollaborationEnquiry[]>(() => {
+    const saved = localStorage.getItem('colab_structured_enquiries');
+    return saved ? JSON.parse(saved) : STRUCTURED_ENQUIRIES;
+  });
+
+  const [negotiationQuotes, setNegotiationQuotes] = useState<NegotiationQuote[]>(() => {
+    const saved = localStorage.getItem('colab_negotiation_quotes');
+    return saved ? JSON.parse(saved) : NEGOTIATION_QUOTES;
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // LocalStorage sync
   useEffect(() => {
     localStorage.setItem('colab_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('colab_structured_enquiries', JSON.stringify(structuredEnquiries));
+  }, [structuredEnquiries]);
+
+  useEffect(() => {
+    localStorage.setItem('colab_negotiation_quotes', JSON.stringify(negotiationQuotes));
+  }, [negotiationQuotes]);
+
+  useEffect(() => {
+    localStorage.setItem('colab_conversations', JSON.stringify(conversations));
+  }, [conversations]);
+
+  useEffect(() => {
+    localStorage.setItem('colab_messages', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     localStorage.setItem('colab_campaigns', JSON.stringify(campaigns));
@@ -628,7 +666,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const sendMessage = (conversationId: string, text: string, attachmentUrl?: string) => {
+  const markConversationAsRead = (conversationId: string) => {
+    setMessages(prev => prev.map(m => m.conversationId === conversationId ? { ...m, isRead: true } : m));
+    setConversations(prev => prev.map(c => c.id === conversationId ? { ...c, unreadCount: 0 } : c));
+  };
+
+  const sendMessage = (
+    conversationId: string,
+    text: string,
+    attachmentUrl?: string,
+    attachmentType?: Message['attachmentType'],
+    attachmentMetadata?: any
+  ) => {
     const activeUser = currentUser || users[0] || DEMO_USERS[0];
     const newMsg: Message = {
       id: `msg-${Date.now()}`,
@@ -638,6 +687,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       senderRole: activeUser.role,
       text,
       attachmentUrl,
+      attachmentType,
+      attachmentMetadata,
       timestamp: new Date().toISOString(),
       isRead: false
     };
@@ -651,6 +702,375 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lastMessageTime: new Date().toISOString()
       };
     }));
+  };
+
+  const sendVoiceNote = (conversationId: string, durationSeconds: number = 18) => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const newMsg: Message = {
+      id: `msg-voice-${Date.now()}`,
+      conversationId,
+      senderId: activeUser.id,
+      senderName: activeUser.name,
+      senderRole: activeUser.role,
+      text: `🎤 Voice note (${durationSeconds}s)`,
+      attachmentType: 'voice_note',
+      voiceNoteDuration: durationSeconds,
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+    setMessages(prev => [...prev, newMsg]);
+    setConversations(prev => prev.map(conv => {
+      if (conv.id !== conversationId) return conv;
+      return {
+        ...conv,
+        lastMessage: `🎤 Voice note (${durationSeconds}s)`,
+        lastMessageTime: new Date().toISOString()
+      };
+    }));
+  };
+
+  const sendStructuredEnquiry = (enquiryData: Omit<StructuredCollaborationEnquiry, 'id' | 'createdAt' | 'status'>): string => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const targetId = enquiryData.targetId || enquiryData.creatorId || '';
+    const senderId = enquiryData.senderId || enquiryData.businessId || activeUser.id;
+    const targetUser = creators.find(c => c.id === targetId) || users.find(u => u.id === targetId);
+
+    const convId = createOrGetConversation(targetId);
+    const newEnquiry: StructuredCollaborationEnquiry = {
+      ...enquiryData,
+      id: `enq-${Date.now()}`,
+      conversationId: convId,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      senderId,
+      senderName: enquiryData.senderName || enquiryData.businessName || activeUser.name,
+      senderAvatar: enquiryData.senderAvatar || enquiryData.businessAvatar || activeUser.avatar,
+      senderRole: activeUser.role,
+      targetId,
+      targetName: enquiryData.targetName || enquiryData.creatorName || targetUser?.name || 'Creator'
+    };
+
+    setStructuredEnquiries(prev => [newEnquiry, ...prev]);
+
+    // Send formatted message card into conversation
+    const cardText = `📋 Structured Collaboration Enquiry: ${enquiryData.projectNeed} • Budget: ₹${enquiryData.budget.toLocaleString()}`;
+    const enquiryMsg: Message = {
+      id: `msg-enq-${Date.now()}`,
+      conversationId: convId,
+      senderId: activeUser.id,
+      senderName: activeUser.name,
+      senderRole: activeUser.role,
+      text: cardText,
+      attachmentType: 'enquiry',
+      attachmentMetadata: newEnquiry,
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+
+    setMessages(prev => [...prev, enquiryMsg]);
+    setConversations(prev => prev.map(conv => {
+      if (conv.id !== convId) return conv;
+      return {
+        ...conv,
+        category: 'enquiries',
+        lastMessage: cardText,
+        lastMessageTime: new Date().toISOString()
+      };
+    }));
+
+    return convId;
+  };
+
+  const sendNegotiationQuote = (quoteData: Omit<NegotiationQuote, 'id' | 'createdAt' | 'status' | 'history'>): NegotiationQuote => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const newQuote: NegotiationQuote = {
+      id: `quote-${Date.now()}`,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      history: [
+        {
+          senderId: activeUser.id,
+          senderName: activeUser.name,
+          senderRole: activeUser.role,
+          amount: quoteData.currentAmount,
+          note: quoteData.terms || 'Formal quotation submitted.',
+          timestamp: new Date().toISOString()
+        }
+      ],
+      ...quoteData
+    };
+
+    setNegotiationQuotes(prev => [newQuote, ...prev]);
+
+    const quoteText = `💼 Formal Quotation: ₹${quoteData.currentAmount.toLocaleString()} (${quoteData.itemizedDeliverables.map(d => d.item).join(', ')})`;
+    const quoteMsg: Message = {
+      id: `msg-quote-${Date.now()}`,
+      conversationId: quoteData.conversationId,
+      senderId: activeUser.id,
+      senderName: activeUser.name,
+      senderRole: activeUser.role,
+      text: quoteText,
+      attachmentType: 'quote',
+      attachmentMetadata: newQuote,
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+
+    setMessages(prev => [...prev, quoteMsg]);
+    setConversations(prev => prev.map(conv => {
+      if (conv.id !== quoteData.conversationId) return conv;
+      return {
+        ...conv,
+        category: 'negotiations',
+        lastMessage: quoteText,
+        lastMessageTime: new Date().toISOString()
+      };
+    }));
+
+    return newQuote;
+  };
+
+  const respondToQuote = (
+    quoteId: string,
+    action: 'accept' | 'counter' | 'reject',
+    counterAmount?: number,
+    note?: string
+  ) => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const quote = negotiationQuotes.find(q => q.id === quoteId);
+    if (!quote) return;
+
+    if (action === 'accept') {
+      const finalPrice = quote.currentAmount;
+      const updatedQuote: NegotiationQuote = {
+        ...quote,
+        status: 'accepted',
+        finalAgreedAmount: finalPrice,
+        history: [
+          ...quote.history,
+          {
+            senderId: activeUser.id,
+            senderName: activeUser.name,
+            senderRole: activeUser.role,
+            amount: finalPrice,
+            note: note || `Terms Accepted at ₹${finalPrice.toLocaleString()}! Deal agreement ready for escrow.`,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      setNegotiationQuotes(prev => prev.map(q => q.id === quoteId ? updatedQuote : q));
+
+      // Create collaboration with escrow ready
+      const fee = Math.round(finalPrice * (settings.platformCommissionPercent / 100));
+      const targetUserId = quote.fromId === activeUser.id ? quote.toId : quote.fromId;
+      const targetUser = users.find(u => u.id === targetUserId) || creators.find(c => c.id === targetUserId) || businesses.find(b => b.id === targetUserId);
+      const isCreator = activeUser.role === 'creator';
+
+      const newCollab: Collaboration = {
+        id: `collab-agreed-${Date.now()}`,
+        campaignId: `camp-agreed-${Date.now()}`,
+        campaignTitle: `Agreed Collaboration: ${quote.itemizedDeliverables.map(d => d.item).join(', ')}`,
+        businessId: isCreator ? targetUserId : activeUser.id,
+        businessName: isCreator ? (targetUser?.name || 'Brand Partner') : activeUser.name,
+        businessAvatar: isCreator ? (targetUser?.avatar || '') : activeUser.avatar,
+        creatorId: isCreator ? activeUser.id : targetUserId,
+        creatorName: isCreator ? activeUser.name : (targetUser?.name || 'Creator'),
+        creatorAvatar: isCreator ? activeUser.avatar : (targetUser?.avatar || ''),
+        creatorHandle: '@creator_partner',
+        agreedAmount: finalPrice,
+        platformFee: fee,
+        creatorPayout: finalPrice - fee,
+        status: 'escrow_funded',
+        escrowStatus: 'held',
+        contractTerms: `Formally agreed terms: ${quote.terms}. Usage: ${quote.usageRights}. Deliverables: ${quote.itemizedDeliverables.map(d => d.item).join(', ')}.`,
+        createdAt: new Date().toISOString(),
+        deadline: new Date(Date.now() + (quote.timelineDays || 5) * 86400000).toISOString(),
+        lastUpdated: new Date().toISOString(),
+        businessReviewed: false,
+        creatorReviewed: false,
+        deliverables: quote.itemizedDeliverables.map((item, idx) => ({
+          id: `del-agreed-${idx}`,
+          title: item.item,
+          format: 'Agreed Deliverable',
+          status: 'pending' as const
+        }))
+      };
+
+      setCollaborations(prev => [newCollab, ...prev]);
+
+      const acceptMsgText = `🤝 Deal Accepted at ₹${finalPrice.toLocaleString()}! Digital agreement locked and escrow secured.`;
+      const acceptMsg: Message = {
+        id: `msg-accept-${Date.now()}`,
+        conversationId: quote.conversationId,
+        senderId: activeUser.id,
+        senderName: activeUser.name,
+        senderRole: activeUser.role,
+        text: acceptMsgText,
+        attachmentType: 'quote',
+        attachmentMetadata: updatedQuote,
+        timestamp: new Date().toISOString(),
+        isRead: false
+      };
+      setMessages(prev => [...prev, acceptMsg]);
+
+    } else if (action === 'counter' && counterAmount) {
+      const updatedQuote: NegotiationQuote = {
+        ...quote,
+        currentAmount: counterAmount,
+        status: 'countered',
+        history: [
+          ...quote.history,
+          {
+            senderId: activeUser.id,
+            senderName: activeUser.name,
+            senderRole: activeUser.role,
+            amount: counterAmount,
+            note: note || `Counteroffer submitted: ₹${counterAmount.toLocaleString()}`,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+
+      setNegotiationQuotes(prev => prev.map(q => q.id === quoteId ? updatedQuote : q));
+
+      const counterText = `🔄 Counteroffer: ₹${counterAmount.toLocaleString()} (${note || 'Price revision proposed'})`;
+      const counterMsg: Message = {
+        id: `msg-counter-${Date.now()}`,
+        conversationId: quote.conversationId,
+        senderId: activeUser.id,
+        senderName: activeUser.name,
+        senderRole: activeUser.role,
+        text: counterText,
+        attachmentType: 'quote',
+        attachmentMetadata: updatedQuote,
+        timestamp: new Date().toISOString(),
+        isRead: false
+      };
+      setMessages(prev => [...prev, counterMsg]);
+
+    } else if (action === 'reject') {
+      const updatedQuote: NegotiationQuote = {
+        ...quote,
+        status: 'rejected',
+        history: [
+          ...quote.history,
+          {
+            senderId: activeUser.id,
+            senderName: activeUser.name,
+            senderRole: activeUser.role,
+            amount: quote.currentAmount,
+            note: note || 'Quotation declined.',
+            timestamp: new Date().toISOString()
+          }
+        ]
+      };
+      setNegotiationQuotes(prev => prev.map(q => q.id === quoteId ? updatedQuote : q));
+
+      const declineText = `❌ Quotation declined: ${note || 'Budget / terms did not match.'}`;
+      const declineMsg: Message = {
+        id: `msg-reject-${Date.now()}`,
+        conversationId: quote.conversationId,
+        senderId: activeUser.id,
+        senderName: activeUser.name,
+        senderRole: activeUser.role,
+        text: declineText,
+        attachmentType: 'quote',
+        attachmentMetadata: updatedQuote,
+        timestamp: new Date().toISOString(),
+        isRead: false
+      };
+      setMessages(prev => [...prev, declineMsg]);
+    }
+  };
+
+  const bookServiceWithConditions = (
+    creatorId: string,
+    slotId: string,
+    serviceTitle: string,
+    date: string,
+    timeSlot: string,
+    price: number,
+    conditions: string,
+    clientNote?: string
+  ): Collaboration => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const targetCreator = creators.find(c => c.id === creatorId) || users.find(u => u.id === creatorId);
+    const convId = createOrGetConversation(creatorId);
+
+    // 1. Mark slot as booked
+    setBookingSlots(prev => prev.map(s => s.id === slotId ? { ...s, status: 'booked', clientName: activeUser.name } : s));
+
+    // 2. Create Collaboration deal room with held escrow
+    const fee = Math.round(price * (settings.platformCommissionPercent / 100));
+    const newCollab: Collaboration = {
+      id: `collab-book-${Date.now()}`,
+      campaignId: `book-camp-${Date.now()}`,
+      campaignTitle: `Booked: ${serviceTitle} (${date} • ${timeSlot})`,
+      businessId: activeUser.id,
+      businessName: activeUser.name,
+      businessAvatar: activeUser.avatar,
+      creatorId,
+      creatorName: targetCreator?.name || 'Creator',
+      creatorAvatar: targetCreator?.avatar || '',
+      creatorHandle: (targetCreator as any)?.handle || '@creator',
+      agreedAmount: price,
+      platformFee: fee,
+      creatorPayout: price - fee,
+      status: 'escrow_funded',
+      escrowStatus: 'held',
+      contractTerms: `Instant Service Booking: ${serviceTitle}. Date: ${date} ${timeSlot}. Conditions: ${conditions}. Note: ${clientNote || 'None'}`,
+      createdAt: new Date().toISOString(),
+      deadline: `${date}T18:00:00Z`,
+      lastUpdated: new Date().toISOString(),
+      businessReviewed: false,
+      creatorReviewed: false,
+      deliverables: [
+        {
+          id: `del-book-1`,
+          title: `${serviceTitle} Completion`,
+          format: 'Direct Professional Service',
+          status: 'pending'
+        }
+      ]
+    };
+
+    setCollaborations(prev => [newCollab, ...prev]);
+
+    // 3. Post booking confirmation card to conversation thread
+    const bookingMsgText = `📅 Instant Booking Confirmed: ${serviceTitle} on ${date} (${timeSlot}) • ₹${price.toLocaleString()} secured in escrow.`;
+    const bookingMsg: Message = {
+      id: `msg-book-${Date.now()}`,
+      conversationId: convId,
+      senderId: activeUser.id,
+      senderName: activeUser.name,
+      senderRole: activeUser.role,
+      text: bookingMsgText,
+      attachmentType: 'booking',
+      attachmentMetadata: {
+        serviceTitle,
+        date,
+        timeSlot,
+        price,
+        conditions,
+        collabId: newCollab.id
+      },
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+
+    setMessages(prev => [...prev, bookingMsg]);
+    setConversations(prev => prev.map(conv => {
+      if (conv.id !== convId) return conv;
+      return {
+        ...conv,
+        category: 'bookings',
+        lastMessage: bookingMsgText,
+        lastMessageTime: new Date().toISOString()
+      };
+    }));
+
+    return newCollab;
   };
 
   const createOrGetConversation = (targetUserId: string, collaborationId?: string): string => {
@@ -924,10 +1344,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bookingSlots,
         performanceAttributions,
         sponsorRfps,
+        structuredEnquiries,
+        negotiationQuotes,
         createSponsorRfp,
         switchSubProfile,
         createOrUpdateSubProfile,
         bookConsultationSlot,
+        bookServiceWithConditions,
         joinAffiliateProgram,
         simulateAffiliateOrder,
         bookLocalAdBundle,
@@ -942,6 +1365,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         releaseEscrowPayment,
         addReview,
         sendMessage,
+        sendVoiceNote,
+        sendStructuredEnquiry,
+        sendNegotiationQuote,
+        respondToQuote,
+        markConversationAsRead,
         createOrGetConversation,
         updateSettings,
         toggleUserVerification,

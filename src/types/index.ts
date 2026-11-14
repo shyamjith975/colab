@@ -274,8 +274,10 @@ export interface Message {
   text: string;
   timestamp: string;
   attachmentUrl?: string;
-  attachmentType?: 'image' | 'video' | 'pdf';
+  attachmentType?: 'image' | 'video' | 'pdf' | 'voice_note' | 'enquiry' | 'quote' | 'booking';
+  attachmentMetadata?: any;
   isRead: boolean;
+  voiceNoteDuration?: number; // seconds
 }
 
 export interface Conversation {
@@ -288,6 +290,68 @@ export interface Conversation {
   lastMessageTime?: string;
   unreadCount: number;
   collaborationId?: string;
+  category?: 'all' | 'enquiries' | 'negotiations' | 'bookings' | 'active_deals';
+  isPinned?: boolean;
+}
+
+export interface StructuredCollaborationEnquiry {
+  id: string;
+  conversationId?: string;
+  senderId?: string;
+  senderName?: string;
+  senderAvatar?: string;
+  senderRole?: UserRole;
+  senderCompany?: string;
+  targetId?: string;
+  targetName?: string;
+  creatorId?: string;
+  creatorName?: string;
+  creatorHandle?: string;
+  creatorAvatar?: string;
+  businessId?: string;
+  businessName?: string;
+  businessAvatar?: string;
+  projectNeed: string; // What they need
+  budget: number; // in ₹
+  budgetType?: 'fixed' | 'negotiable' | 'barter_plus_cash';
+  expectedDeliverables: string[]; // e.g. ["1x 60s Reel", "2x Stories with link"]
+  startDate?: string;
+  deadline?: string;
+  campaignDates?: string;
+  locationType?: 'remote' | 'on_ground' | 'hybrid';
+  locationDetails?: string;
+  location?: string;
+  contentUsageRights: 'organic_only' | '30d_paid_ads' | '90d_whitelisting' | 'perpetuity_buyout' | string;
+  expectedResults: string; // Target KPIs: Views, Sales, App Installs, Footfall
+  status: 'pending' | 'accepted' | 'countered' | 'declined';
+  createdAt: string;
+}
+
+export interface NegotiationQuote {
+  id: string;
+  conversationId: string;
+  enquiryId?: string;
+  fromId: string;
+  fromName: string;
+  fromRole: UserRole;
+  toId: string;
+  toName: string;
+  currentAmount: number; // in ₹
+  itemizedDeliverables: { item: string; price: number }[];
+  timelineDays: number;
+  usageRights: string;
+  terms: string;
+  status: 'pending' | 'accepted' | 'countered' | 'rejected';
+  history: {
+    senderId: string;
+    senderName: string;
+    senderRole: UserRole;
+    amount: number;
+    note?: string;
+    timestamp: string;
+  }[];
+  finalAgreedAmount?: number;
+  createdAt: string;
 }
 
 export interface Review {
@@ -351,6 +415,9 @@ export interface BookingSlot {
   price: number;
   clientName?: string;
   status: 'available' | 'booked' | 'completed';
+  bookingConditions?: string;
+  serviceLocation?: string;
+  instantBookable?: boolean;
 }
 
 export interface LocalAdChannel {

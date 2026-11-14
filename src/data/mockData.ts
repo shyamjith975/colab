@@ -17,7 +17,9 @@ import {
   BookingSlot,
   PerformanceAttribution,
   ProfessionalSubProfile,
-  SponsorRequirementRFP
+  SponsorRequirementRFP,
+  StructuredCollaborationEnquiry,
+  NegotiationQuote
 } from '../types';
 
 export const INITIAL_SETTINGS: PlatformSettings = {
@@ -3112,7 +3114,10 @@ export const BOOKING_SLOTS: BookingSlot[] = [
     timeSlot: '11:00 AM - 12:00 PM',
     durationMinutes: 60,
     price: 2500,
-    status: 'available'
+    status: 'available',
+    bookingConditions: '100% escrow protection. 48-hour free cancellation. Google Meet link issued immediately upon booking.',
+    serviceLocation: 'Virtual Video Call (Google Meet)',
+    instantBookable: true
   },
   {
     id: 'slot-2',
@@ -3125,7 +3130,10 @@ export const BOOKING_SLOTS: BookingSlot[] = [
     timeSlot: '02:00 PM - 06:00 PM',
     durationMinutes: 240,
     price: 8500,
-    status: 'available'
+    status: 'available',
+    bookingConditions: 'Requires physical store location in Mumbai/Thane. Merchandise to be styled must be pre-steamed. Travel allowance included.',
+    serviceLocation: 'On-Site Store / Studio (Mumbai & MMR)',
+    instantBookable: true
   },
   {
     id: 'slot-3',
@@ -3138,7 +3146,105 @@ export const BOOKING_SLOTS: BookingSlot[] = [
     timeSlot: '04:00 PM - 05:00 PM',
     durationMinutes: 60,
     price: 3500,
-    status: 'available'
+    status: 'available',
+    bookingConditions: 'Includes teardown analysis and positioning recommendations. NDA signed automatically via platform.',
+    serviceLocation: 'Virtual Session (Zoom / Meet)',
+    instantBookable: true
+  },
+  {
+    id: 'slot-4',
+    creatorId: 'user-creator-1',
+    creatorName: 'Ananya Sharma',
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    serviceTitle: 'Express UGC Ad Shoot (24-Hour Raw Delivery)',
+    serviceType: 'express_ugc',
+    date: '2026-11-23',
+    timeSlot: '10:00 AM - 01:00 PM',
+    durationMinutes: 180,
+    price: 4500,
+    status: 'available',
+    bookingConditions: 'High-energy unboxing, honest reaction, and 3 hook variations delivered in 4K 60fps within 24 hours of shoot slot.',
+    serviceLocation: 'Home Studio (Natural Lighting)',
+    instantBookable: true
+  }
+];
+
+// 2. STRUCTURED COLLABORATION ENQUIRIES
+export const STRUCTURED_ENQUIRIES: StructuredCollaborationEnquiry[] = [
+  {
+    id: 'enq-101',
+    conversationId: 'conv-101',
+    senderId: 'user-biz-1',
+    senderName: 'Aroma Threads Boutique',
+    senderAvatar: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=400&q=80',
+    senderRole: 'business',
+    senderCompany: 'Aroma Threads Handloom Pvt Ltd',
+    targetId: 'user-creator-1',
+    targetName: 'Ananya Sharma',
+    projectNeed: 'Promote our upcoming festive organic handloom collection with stylish, everyday ethnic transition reels.',
+    budget: 6000,
+    budgetType: 'negotiable',
+    expectedDeliverables: ['1x 60s Instagram Reel (4K)', '2x Stories with Link Sticker', 'Whitelisting Code (30 Days)'],
+    startDate: '2026-11-20',
+    deadline: '2026-12-05',
+    locationType: 'remote',
+    locationDetails: 'Samples dispatched to Mumbai home studio',
+    contentUsageRights: '30d_paid_ads',
+    expectedResults: 'D2C boutique web visits and coupon redemptions for festive collection launch.',
+    status: 'accepted',
+    createdAt: '2026-11-04T10:00:00Z'
+  },
+  {
+    id: 'enq-102',
+    conversationId: 'conv-102',
+    senderId: 'user-biz-3',
+    senderName: 'UrbanGlow Skincare',
+    senderAvatar: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80',
+    senderRole: 'business',
+    senderCompany: 'UrbanGlow Beauty Labs',
+    targetId: 'user-creator-1',
+    targetName: 'Ananya Sharma',
+    projectNeed: 'Sunscreen stick launch test — texture demonstration and under-makeup application showcase.',
+    budget: 8000,
+    budgetType: 'fixed',
+    expectedDeliverables: ['1x Dedicated Reel (60s)', '1x Carousel post (5 slides)'],
+    startDate: '2026-11-25',
+    deadline: '2026-12-10',
+    locationType: 'remote',
+    contentUsageRights: '90d_whitelisting',
+    expectedResults: '100K+ reach and minimum 250 direct website clicks.',
+    status: 'pending',
+    createdAt: '2026-11-13T14:00:00Z'
+  }
+];
+
+// 4. PROPOSALS & ACTIVE NEGOTIATION QUOTES
+export const NEGOTIATION_QUOTES: NegotiationQuote[] = [
+  {
+    id: 'quote-101',
+    conversationId: 'conv-102',
+    enquiryId: 'enq-102',
+    fromId: 'user-creator-1',
+    fromName: 'Ananya Sharma',
+    fromRole: 'creator',
+    toId: 'user-biz-3',
+    toName: 'UrbanGlow Skincare',
+    currentAmount: 7000,
+    itemizedDeliverables: [
+      { item: '1x 4K 60s Instagram Reel (Under-makeup application demo)', price: 4500 },
+      { item: '2x Instagram Stories with Brand Link Sticker', price: 1500 },
+      { item: '30-Day Meta / Spark Ads Whitelisting Rights', price: 1000 }
+    ],
+    timelineDays: 4,
+    usageRights: '30-day Meta Spark Ads Paid Usage Rights',
+    terms: '2 rounds of minor revisions included. 50% milestone escrow funding required upon agreement.',
+    status: 'countered',
+    history: [
+      { senderId: 'user-creator-1', senderName: 'Ananya Sharma', senderRole: 'creator', amount: 8000, note: "Official rate card quotation for 1x Reel + 2x Stories + 30-day Spark Ads rights.", timestamp: '2026-11-13T14:30:00Z' },
+      { senderId: 'user-biz-3', senderName: 'UrbanGlow Skincare', senderRole: 'business', amount: 6000, note: "We have an allocated Q4 launch budget of ₹6,000 for this tier. Could we meet in between?", timestamp: '2026-11-13T15:10:00Z' },
+      { senderId: 'user-creator-1', senderName: 'Ananya Sharma', senderRole: 'creator', amount: 7000, note: "I can meet you at ₹7,000 if we keep turnaround to 4 business days!", timestamp: '2026-11-13T16:00:00Z' }
+    ],
+    createdAt: '2026-11-13T14:30:00Z'
   }
 ];
 

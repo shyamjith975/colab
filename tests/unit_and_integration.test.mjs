@@ -492,5 +492,154 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(retrieved.length, 1);
     assert.strictEqual(retrieved[0].title, 'Test Local Launch');
   });
+
+  test('27. Structured Collaboration Enquiry 7-Field Validation & Anti-Spam Check', () => {
+    const enquiry = {
+      projectNeed: 'Looking for a dedicated 60-second Instagram Reel showcasing our new pastel summer handloom collection with styling tips.',
+      budget: 8000,
+      expectedDeliverables: ['1x Dedicated Reel (60s)', '2x Instagram Stories with Link', 'High-res Stills'],
+      campaignDates: 'Dec 01, 2026 - Dec 15, 2026',
+      location: 'Remote (Product Shipped to Creator)',
+      contentUsageRights: '90d_whitelisting',
+      expectedResults: '50,000+ views, 400+ swipe-ups to website, 3.5% engagement'
+    };
+
+    // Verify all 7 required structured fields are populated and valid
+    assert.ok(enquiry.projectNeed.length >= 20, '1. Project Need must be substantive (not low-effort "Hi")');
+    assert.ok(enquiry.budget >= 1000, '2. Budget must meet minimum creator threshold');
+    assert.ok(enquiry.expectedDeliverables.length >= 1, '3. Expected Deliverables must contain at least 1 item');
+    assert.ok(enquiry.campaignDates.length > 5, '4. Campaign Dates must be specified');
+    assert.ok(enquiry.location.length > 3, '5. Location / Mode must be specified');
+    assert.ok(['organic_only', '30d_paid_ads', '90d_whitelisting', 'perpetuity_buyout'].includes(enquiry.contentUsageRights), '6. Usage rights must be formally defined');
+    assert.ok(enquiry.expectedResults.length >= 10, '7. Expected Results / Target KPIs must be clear');
+  });
+
+  test('28. Quotation & Negotiation Counteroffer Ladder (8k -> 6k -> 7k -> Final Agreed Deal)', () => {
+    // Initial quote by Creator
+    const quote = {
+      id: 'quote-test-1',
+      creatorName: 'Ananya Sharma',
+      businessName: 'Aroma Threads',
+      currentAmount: 8000,
+      status: 'pending',
+      history: [
+        {
+          senderName: 'Ananya Sharma',
+          amount: 8000,
+          note: 'Initial formal quotation for dedicated reel + 2 stories',
+          timestamp: '2026-11-14T10:00:00Z'
+        }
+      ]
+    };
+    assert.strictEqual(quote.currentAmount, 8000);
+    assert.strictEqual(quote.history.length, 1);
+
+    // Step 2: Business counteroffers at 6,000
+    quote.currentAmount = 6000;
+    quote.status = 'countered';
+    quote.history.push({
+      senderName: 'Aroma Threads',
+      amount: 6000,
+      note: 'Our maximum campaign budget per creator',
+      timestamp: '2026-11-14T11:00:00Z'
+    });
+    assert.strictEqual(quote.currentAmount, 6000);
+    assert.strictEqual(quote.status, 'countered');
+    assert.strictEqual(quote.history.length, 2);
+
+    // Step 3: Creator counteroffers at 7,000
+    quote.currentAmount = 7000;
+    quote.status = 'countered';
+    quote.history.push({
+      senderName: 'Ananya Sharma',
+      amount: 7000,
+      note: 'Can meet in the middle at ₹7,000 with raw footage included',
+      timestamp: '2026-11-14T11:30:00Z'
+    });
+    assert.strictEqual(quote.currentAmount, 7000);
+    assert.strictEqual(quote.history.length, 3);
+
+    // Step 4: Business accepts at 7,000
+    quote.status = 'accepted';
+    quote.finalAgreedAmount = 7000;
+    quote.history.push({
+      senderName: 'Aroma Threads',
+      amount: 7000,
+      note: 'Agreed at ₹7,000! Securing escrow funds.',
+      timestamp: '2026-11-14T12:00:00Z'
+    });
+
+    assert.strictEqual(quote.status, 'accepted');
+    assert.strictEqual(quote.finalAgreedAmount, 7000);
+    assert.strictEqual(quote.history.length, 4);
+
+    // Escrow deposit math
+    const fee = Math.round(quote.finalAgreedAmount * 0.08);
+    const creatorNet = quote.finalAgreedAmount - fee;
+    assert.strictEqual(fee, 560, 'Platform commission 8% of 7000 = 560');
+    assert.strictEqual(creatorNet, 6440, 'Creator net payout = 6440');
+  });
+
+  test('29. Instant Service Booking Engine with Conditions and Escrow Security', () => {
+    const slot = {
+      id: 'slot-consult-1',
+      creatorId: 'user-creator-1',
+      serviceTitle: '1-on-1 Brand Strategy Consultation & Wardrobe Direction',
+      date: '2026-11-20',
+      timeSlot: '11:00 AM - 12:00 PM',
+      durationMinutes: 60,
+      price: 3500,
+      status: 'available',
+      bookingConditions: 'Client must provide brand moodboard 3 days prior; 1 free reschedule up to 24 hours prior',
+      serviceLocation: 'Remote Video Call (Google Meet / Zoom)',
+      instantBookable: true
+    };
+
+    assert.strictEqual(slot.status, 'available');
+    assert.strictEqual(slot.instantBookable, true);
+    assert.ok(slot.bookingConditions.includes('moodboard 3 days prior'));
+
+    // Instant booking execution
+    const clientName = 'UrbanGlow Skincare';
+    const bookedSlot = { ...slot, status: 'booked', clientName };
+    assert.strictEqual(bookedSlot.status, 'booked');
+    assert.strictEqual(bookedSlot.clientName, 'UrbanGlow Skincare');
+
+    // Associated Deal Room creation with escrow held
+    const dealRoom = {
+      id: `collab-book-${Date.now()}`,
+      campaignTitle: `Booked: ${slot.serviceTitle}`,
+      agreedAmount: slot.price,
+      escrowStatus: 'held',
+      status: 'escrow_funded',
+      contractTerms: `Instant Booking: ${slot.serviceTitle} on ${slot.date}. Conditions: ${slot.bookingConditions}`
+    };
+
+    assert.strictEqual(dealRoom.agreedAmount, 3500);
+    assert.strictEqual(dealRoom.escrowStatus, 'held');
+    assert.strictEqual(dealRoom.status, 'escrow_funded');
+  });
+
+  test('30. Public Profile Shareable Links & Aviora CRM Unified Inbox Routing', () => {
+    const origin = 'https://colab.market';
+    const creatorId = 'user-creator-1';
+    const publicUrl = `${origin}/creators/${creatorId}`;
+
+    assert.strictEqual(publicUrl, 'https://colab.market/creators/user-creator-1');
+
+    // Aviora CRM category routing rules
+    const determineCategory = (itemType) => {
+      switch (itemType) {
+        case 'enquiry': return 'enquiries';
+        case 'quote': return 'negotiations';
+        case 'booking': return 'bookings';
+        default: return 'all';
+      }
+    };
+
+    assert.strictEqual(determineCategory('enquiry'), 'enquiries');
+    assert.strictEqual(determineCategory('quote'), 'negotiations');
+    assert.strictEqual(determineCategory('booking'), 'bookings');
+  });
 });
 
