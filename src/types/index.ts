@@ -2,7 +2,7 @@ export type UserRole = 'creator' | 'business' | 'agency' | 'organiser' | 'sponso
 
 export interface ProfessionalSubProfile {
   id: string;
-  type: 'influencer' | 'ugc_creator' | 'stylist' | 'photographer' | 'designer' | 'boutique_owner' | 'agency' | 'business';
+  type: 'influencer' | 'ugc_creator' | 'stylist' | 'photographer' | 'designer' | 'boutique_owner' | 'agency' | 'business' | 'sponsor';
   title: string;
   bio: string;
   skills: string[];

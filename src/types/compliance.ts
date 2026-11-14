@@ -134,3 +134,4 @@ export interface NotificationDispatch {
   status: 'sent' | 'delivered' | 'failed' | 'queued';
   dispatchedAt: string;
 }
+

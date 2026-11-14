@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDate } from '../utils';
-import { UserRole, ProfessionalSubProfile } from '../types';
+import { UserRole, ProfessionalSubProfile, AffiliateProgram, CreatorProfile } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -66,15 +66,70 @@ export const DashboardPage: React.FC = () => {
     createSponsorRfp,
     createCampaign,
     localAdChannels,
-    creatorCollectives
+    creatorCollectives,
+    affiliatePrograms
   } = useApp();
   const navigate = useNavigate();
 
   // Active sub-tab state
   const [activeTab, setActiveTab] = useState<string>('deals');
 
+  // AI Matchmaker State for Business Dashboard
+  const [dashboardMatchCategory, setDashboardMatchCategory] = useState<string>('Fashion & Style');
+  const [dashboardMatchCity, setDashboardMatchCity] = useState<string>('All India');
+  const [dashboardMatchBudget, setDashboardMatchBudget] = useState<number>(10000);
+  const [dashboardMatchResults, setDashboardMatchResults] = useState<{ creator: CreatorProfile; score: number; reasons: string[] }[]>([]);
+  const [isDashboardMatching, setIsDashboardMatching] = useState<boolean>(false);
+
+  const handleRunDashboardMatch = () => {
+    setIsDashboardMatching(true);
+    setTimeout(() => {
+      const scored = creators.map((creator) => {
+        let score = 55;
+        const reasons: string[] = [];
+
+        if (dashboardMatchCategory === 'All' || creator.category === dashboardMatchCategory) {
+          score += 25;
+          reasons.push(`Direct category match in ${creator.category}`);
+        } else {
+          score += 5;
+        }
+
+        if (dashboardMatchCity !== 'All India' && (creator.location || '').toLowerCase().includes(dashboardMatchCity.toLowerCase())) {
+          score += 15;
+          reasons.push(`Hyper-local presence in ${creator.location}`);
+        } else if (dashboardMatchCity === 'All India') {
+          score += 10;
+        }
+
+        if (creator.minPrice <= dashboardMatchBudget) {
+          score += 10;
+          reasons.push(`Fits budget (Starting from ₹${creator.minPrice.toLocaleString()})`);
+        } else {
+          score -= 10;
+        }
+
+        const eng = creator.socialAccounts[0]?.engagementRate || 4.2;
+        if (eng >= 4.5) {
+          score += 5;
+          reasons.push(`Strong engagement rate (${eng}%)`);
+        }
+
+        return {
+          creator,
+          score: Math.min(99, Math.max(50, score)),
+          reasons
+        };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+      setDashboardMatchResults(scored.slice(0, 4));
+      setIsDashboardMatching(false);
+    }, 350);
+  };
+
   // All Users Performance & Directory Tab States
-  const [allUsersSubTab, setAllUsersSubTab] = useState<'creators' | 'businesses' | 'sponsors'>('creators');
+  const [allUsersSubTab, setAllUsersSubTab] = useState<'creators' | 'businesses' | 'sponsors' | 'local-ads' | 'affiliates' | 'collectives'>('creators');
   const [allUsersSearch, setAllUsersSearch] = useState<string>('');
   const [allUsersCategoryFilter, setAllUsersCategoryFilter] = useState<string>('All');
   const [allUsersSortBy, setAllUsersSortBy] = useState<'earned_spend' | 'deals' | 'rating'>('earned_spend');
@@ -232,6 +287,48 @@ export const DashboardPage: React.FC = () => {
   // Unified Professional Identity Sub-Profiles
   const userSubProfiles: ProfessionalSubProfile[] = (currentUser?.subProfiles && currentUser.subProfiles.length > 0)
     ? currentUser.subProfiles
+    : currentUser?.role === 'business' || currentUser?.role === 'sponsor'
+    ? [
+        {
+          id: 'sub-biz-brand',
+          type: 'business',
+          title: 'DTC Brand Marketing & Creator Deals',
+          bio: 'Running creator campaigns, UGC unboxings, Meta Spark Whitelisting & brand ambassador contracts.',
+          skills: ['Influencer Briefing', 'UGC Direction', 'Whitelisting Rights', 'Performance ROAS'],
+          location: currentUser?.location || 'Mumbai, Maharashtra',
+          languages: ['English', 'Hindi'],
+          startingRate: 15000,
+          portfolio: [],
+          verifiedCredentials: ['Verified Enterprise Brand', 'ASCI Registered'],
+          isAvailable: true
+        },
+        {
+          id: 'sub-biz-sponsor',
+          type: 'sponsor',
+          title: 'Corporate Event & Campus Sponsor',
+          bio: 'Capital commitments & title sponsorships for college cultural fests, esports arenas & tech summits.',
+          skills: ['Title Sponsorship', 'On-ground Sampling Stalls', 'Backdrop Branding', 'Keynote Slots'],
+          location: currentUser?.location || 'Pan-India',
+          languages: ['English', 'Hindi'],
+          startingRate: 50000,
+          portfolio: [],
+          verifiedCredentials: ['Corporate Sponsor Verified', 'Escrow Funded'],
+          isAvailable: true
+        },
+        {
+          id: 'sub-biz-local',
+          type: 'business',
+          title: 'Hyperlocal City Retail Advertiser',
+          bio: 'Hyperlocal advertising across city cafe table QR codes, gym displays, transit kiosks & local stores.',
+          skills: ['Offline Footfall Tracking', 'POS Coupon Redemptions', 'City Network Bundles'],
+          location: currentUser?.location || 'Thiruvananthapuram, Kerala',
+          languages: ['English', 'Malayalam', 'Hindi'],
+          startingRate: 8000,
+          portfolio: [],
+          verifiedCredentials: ['Local Commerce Certified', 'Tracked Footfall'],
+          isAvailable: true
+        }
+      ]
     : [
         {
           id: 'sub-inf-default',
@@ -996,15 +1093,51 @@ export const DashboardPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setActiveTab('local-collective')}
+                onClick={() => setActiveTab('sponsorships')}
                 className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
-                  activeTab === 'local-collective'
+                  activeTab === 'sponsorships'
+                    ? 'border-amber-500 text-amber-800 font-black'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                <span>Sponsor Events & Post RFPs ({sponsorships.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('local-ads')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'local-ads'
+                    ? 'border-emerald-600 text-emerald-800 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Local City Ads Network ({localAdChannels.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('affiliates')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'affiliates'
                     ? 'border-indigo-600 text-indigo-600 font-bold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Local Ads & Collectives</span>
+                <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Affiliate Program ({affiliatePrograms.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('ai-match')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'ai-match'
+                    ? 'border-purple-600 text-purple-700 font-black bg-purple-50/50'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                <span>AI Creator Matchmaker</span>
               </button>
 
               <button
@@ -1242,13 +1375,13 @@ export const DashboardPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => setAllUsersSubTab('creators')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
                       allUsersSubTab === 'creators'
                         ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                   >
-                    <span>🎨 Creators Earned</span>
+                    <span>🎨 Creators</span>
                     <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                       {creators.length}
                     </span>
@@ -1256,13 +1389,13 @@ export const DashboardPage: React.FC = () => {
 
                   <button
                     onClick={() => setAllUsersSubTab('businesses')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
                       allUsersSubTab === 'businesses'
                         ? 'bg-indigo-500 text-white font-black shadow-md'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                   >
-                    <span>🏢 Brands Spend & Sales</span>
+                    <span>🏢 Brands</span>
                     <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                       {businesses.length}
                     </span>
@@ -1270,15 +1403,57 @@ export const DashboardPage: React.FC = () => {
 
                   <button
                     onClick={() => setAllUsersSubTab('sponsors')}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
                       allUsersSubTab === 'sponsors'
                         ? 'bg-amber-400 text-slate-950 font-black shadow-md'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                   >
-                    <span>🎪 Sponsors & Events</span>
+                    <span>🎪 Sponsors</span>
                     <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
                       {sponsorships.length + sponsorRfps.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setAllUsersSubTab('local-ads')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                      allUsersSubTab === 'local-ads'
+                        ? 'bg-emerald-400 text-slate-950 font-black shadow-md'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <span>📍 Local Ads</span>
+                    <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                      {localAdChannels.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setAllUsersSubTab('affiliates')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                      allUsersSubTab === 'affiliates'
+                        ? 'bg-purple-400 text-slate-950 font-black shadow-md'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <span>💰 Affiliates</span>
+                    <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                      {affiliatePrograms.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setAllUsersSubTab('collectives')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 ${
+                      allUsersSubTab === 'collectives'
+                        ? 'bg-cyan-400 text-slate-950 font-black shadow-md'
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <span>👥 Collectives</span>
+                    <span className="bg-black/20 text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                      {creatorCollectives.length}
                     </span>
                   </button>
                 </div>
@@ -1666,11 +1841,213 @@ export const DashboardPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* SUB-VIEW 4: LOCAL ADVERTISING CHANNELS & CITY NETWORKS */}
+            {allUsersSubTab === 'local-ads' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Hyperlocal City Advertising Network ({localAdChannels.length} Verified Channels)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Hyperlocal placements: cafe table QR displays, gym screens, campus digital kiosks, and regional city media.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/local-ads')}
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <span>Explore City Bundles</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {localAdChannels
+                    .filter(ch => {
+                      const q = allUsersSearch.toLowerCase().trim();
+                      if (!q) return true;
+                      return ch.name.toLowerCase().includes(q) || ch.city.toLowerCase().includes(q) || ch.type.toLowerCase().includes(q);
+                    })
+                    .map(ch => (
+                      <div key={ch.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 hover:shadow-md transition">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md">
+                            📍 {ch.city}
+                          </span>
+                          <span className="text-xs font-black text-slate-900">
+                            {formatCurrency(ch.price)}<span className="text-[10px] text-slate-400 font-normal">/promo</span>
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-900">{ch.name}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">{ch.description}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Channel Reach</span>
+                            <span className="font-black text-slate-900">{ch.reach?.toLocaleString() || '15,000+'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Attribution</span>
+                            <span className="font-black text-emerald-600">POS QR Code</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                          <span className="text-[11px] text-slate-500">Platform: {ch.platform} ({ch.type})</span>
+                          <button
+                            onClick={() => navigate('/local-ads')}
+                            className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-lg text-xs transition"
+                          >
+                            Book Channel
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-VIEW 5: DTC AFFILIATE PROGRAMS & COMMISSION RATES */}
+            {allUsersSubTab === 'affiliates' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Active Brand Affiliate Programs & Commission Offers ({affiliatePrograms.length})
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Performance marketing: creators generate tracked sales links and earn automated recurring commissions.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/affiliates')}
+                    className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <span>Browse Affiliate Hub</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {affiliatePrograms
+                    .filter((prog: AffiliateProgram) => {
+                      const q = allUsersSearch.toLowerCase().trim();
+                      if (!q) return true;
+                      return prog.productName.toLowerCase().includes(q) || prog.brandName.toLowerCase().includes(q) || prog.category.toLowerCase().includes(q);
+                    })
+                    .map((prog: AffiliateProgram) => (
+                      <div key={prog.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 hover:shadow-md transition">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md">
+                            {prog.category}
+                          </span>
+                          <span className="text-sm font-black text-purple-700">
+                            {prog.commissionRate}% Payout
+                          </span>
+                        </div>
+
+                        <div>
+                          <h4 className="font-extrabold text-sm text-slate-900">{prog.productName}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">By <strong>{prog.brandName}</strong> • {prog.description}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Product Price</span>
+                            <span className="font-black text-slate-900">{formatCurrency(prog.price || 2400)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase block">Cookie Window</span>
+                            <span className="font-black text-indigo-600">{prog.cookieDurationDays || 30} Days</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                          <span className="text-[11px] text-slate-500">{prog.affiliateCount || 18} Creators Active</span>
+                          <button
+                            onClick={() => navigate('/affiliates')}
+                            className="px-3 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-lg text-xs transition"
+                          >
+                            Join & Promote
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-VIEW 6: CREATOR COLLECTIVES & SQUADS */}
+            {allUsersSubTab === 'collectives' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Multi-Creator Collectives & Co-Branded Squads ({creatorCollectives.length})
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Pre-bundled creator squads: hire an entire squad of stylists, photographers and reviewers in one agreement.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/collectives')}
+                    className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <span>Browse All Collectives</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {creatorCollectives.map(coll => (
+                    <div key={coll.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 hover:shadow-md transition">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md">
+                          👥 {coll.memberCount || coll.members?.length || 4} Creators Squad
+                        </span>
+                        <span className="text-sm font-black text-slate-900">
+                          Package: {formatCurrency(coll.bundlePrice)}
+                        </span>
+                      </div>
+
+                      <h4 className="font-extrabold text-sm text-slate-900">{coll.title}</h4>
+                      <p className="text-xs text-slate-500">{coll.description}</p>
+
+                      <div className="flex justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Combined Audience</span>
+                          <span className="font-black text-indigo-700">{coll.combinedFollowers?.toLocaleString() || '450,000+'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Turnaround</span>
+                          <span className="font-black text-emerald-700">7 Business Days</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                        <span className="text-[11px] text-slate-500">Includes Unified Brief & Single Escrow</span>
+                        <button
+                          onClick={() => navigate('/collectives')}
+                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs transition"
+                        >
+                          Book Collective
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* SPONSOR TAB 1: SPONSOR REQUIREMENTS & RFPs MANAGER */}
-        {activeTab === 'sponsor-rfps' && (
+        {/* SPONSOR & BRAND TAB 1: SPONSOR REQUIREMENTS & RFPs MANAGER */}
+        {(activeTab === 'sponsor-rfps' || activeTab === 'sponsorships') && (
           <div className="space-y-6">
             {/* Sponsor Requirements Creation Card (Text Fields) */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
@@ -1942,6 +2319,77 @@ export const DashboardPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Live Event Sponsorship Packages for Brands */}
+              <div className="pt-6 border-t border-slate-100 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-amber-500" />
+                      <span>Live Event & Campus Sponsorship Packages ({sponsorships.length})</span>
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Direct corporate sponsorship opportunities: back college fests, esports arenas, and business summits with secured escrow.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/sponsorships')}
+                    className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold rounded-xl text-xs transition"
+                  >
+                    Browse All Events Hub →
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sponsorships.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 hover:border-amber-300 transition"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md">
+                            {ev.type.replace('_', ' ').toUpperCase()}
+                          </span>
+                          <h4 className="font-extrabold text-slate-900 text-sm mt-1">{ev.title}</h4>
+                          <p className="text-xs text-slate-500">By <strong>{ev.organiserName}</strong> • 📍 {ev.location}</p>
+                        </div>
+                        <span className="text-sm font-black text-slate-900">
+                          {formatCurrency(ev.packages?.[0]?.price || 50000)}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 line-clamp-2">{ev.description}</p>
+
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-center text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Expected Footfall</span>
+                          <span className="font-black text-indigo-700">{ev.expectedFootfall?.toLocaleString() || '12,000+'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Event Date</span>
+                          <span className="font-black text-slate-900">{ev.eventDate || 'Upcoming 2026'}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                        <span className="text-[11px] text-slate-500">
+                          {ev.packages?.[0]?.tier || 'Title Sponsor'} • {ev.packages?.[0]?.perks?.length || 4} Verified Perks
+                        </span>
+                        <button
+                          onClick={() => {
+                            alert(`Initiating sponsorship deposit for ${ev.title}. Redirecting to secure Deal Room.`);
+                            navigate(`/sponsorships`);
+                          }}
+                          className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs transition shadow-xs"
+                        >
+                          Sponsor Event & Fund Escrow
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -2050,24 +2498,30 @@ export const DashboardPage: React.FC = () => {
         )}
 
         {/* BRAND TAB: LOCAL ADS & COLLECTIVES TRACKER */}
-        {activeTab === 'local-collective' && (
+        {(activeTab === 'local-collective' || activeTab === 'local-ads') && (
           <div className="space-y-6">
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                    <MapPin className="w-5 h-5 text-indigo-600" />
-                    <span>Hyperlocal Advertising & Creator Collective Campaigns</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full">
+                      Hyperlocal Marketing Network
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">• POS QR & In-Store Footfall Telemetry</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1 flex items-center space-x-2">
+                    <MapPin className="w-5 h-5 text-emerald-600" />
+                    <span>Hyperlocal City Ads & Creator Collective Network</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Track combined reach from city theme pages, regional food collectives, and local radio networks.
+                    Reach real footfall customers through verified city channels: cafe table displays, local store screens, transit hubs, and regional creator squads.
                   </p>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => navigate('/local-ads')}
-                    className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition"
+                    className="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs transition"
                   >
                     + Book City Ad Channels
                   </button>
@@ -2083,7 +2537,7 @@ export const DashboardPage: React.FC = () => {
               {/* Local Ad Bookings */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Active Hyperlocal Advertising Orders
+                  Active Hyperlocal Advertising Orders & Placements
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
@@ -2115,6 +2569,423 @@ export const DashboardPage: React.FC = () => {
                       <span>Deliverables: <strong>5x LinkedIn + 5x Reels</strong></span>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Available City Ad Channels Inventory */}
+              <div className="pt-4 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Available City Advertising Inventory ({localAdChannels.length} Channels)
+                  </h4>
+                  <button
+                    onClick={() => navigate('/local-ads')}
+                    className="text-xs text-emerald-700 font-bold hover:underline"
+                  >
+                    View City Ad Network Map →
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {localAdChannels.slice(0, 3).map((ch) => (
+                    <div key={ch.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md">
+                          📍 {ch.city}
+                        </span>
+                        <span className="font-black text-slate-900">
+                          {formatCurrency(ch.price)}
+                        </span>
+                      </div>
+                      <h5 className="font-extrabold text-sm text-slate-900">{ch.name}</h5>
+                      <p className="text-slate-500 text-[11px] line-clamp-2">{ch.description}</p>
+                      <div className="flex justify-between text-[11px] pt-2 border-t border-slate-200">
+                        <span className="text-slate-500">Reach: <strong>{ch.reach?.toLocaleString()}</strong></span>
+                        <span className="text-emerald-700 font-bold">POS QR Tracked</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          alert(`Booking ad space on ${ch.name} in ${ch.city}. Redirecting to Deal Room.`);
+                          navigate('/local-ads');
+                        }}
+                        className="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition"
+                      >
+                        Book Channel Now
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BRAND TAB: DTC AFFILIATE & CREATOR REFERRAL PROGRAM */}
+        {activeTab === 'affiliates' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">
+                      DTC Performance Marketing
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">• Automated Commission Settlements</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1">
+                    DTC Creator Affiliate & Referral Program
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Turn creators and fans into your highest-converting sales force. Set commission tiers, provide unique discount codes, and track attributed GMV in real time.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => navigate('/affiliates')}
+                    className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                  >
+                    <span>Public Affiliate Hub</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Telemetry Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100 space-y-1">
+                  <span className="text-[10px] text-purple-700 font-bold uppercase block">Attributed Sales (GMV)</span>
+                  <span className="text-2xl font-black text-slate-900 block">{formatCurrency(184500)}</span>
+                  <span className="text-[10px] text-emerald-600 font-bold block">↑ +24% this month</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Commissions Paid</span>
+                  <span className="text-2xl font-black text-purple-700 block">{formatCurrency(27675)}</span>
+                  <span className="text-[10px] text-slate-500 block">15% default payout tier</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Link Clicks</span>
+                  <span className="text-2xl font-black text-indigo-700 block">14,280</span>
+                  <span className="text-[10px] text-slate-500 block">30-day cookie window</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">Active Affiliates</span>
+                  <span className="text-2xl font-black text-slate-900 block">18 Creators</span>
+                  <span className="text-[10px] text-emerald-600 font-bold block">Verified influencers</span>
+                </div>
+              </div>
+
+              {/* Creator Referral Link & Program Terms */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900">Brand Creator Invite Link</h4>
+                    <p className="text-xs text-slate-500">Share this link with creators to onboard them instantly into your affiliate commission tier.</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value="https://co-lab.in/affiliates/join?brand=urban-vogue"
+                      className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-700 w-64 sm:w-80 select-all"
+                    />
+                    <button
+                      onClick={() => alert("Invite link copied to clipboard!")}
+                      className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Standard Commission</span>
+                    <strong className="text-slate-900">15% on net retail cart value</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Attribution Model</span>
+                    <strong className="text-slate-900">First click • 30-day tracking cookie</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Payout Frequency</span>
+                    <strong className="text-emerald-700">Monthly auto-settle via Escrow UPI</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Active Creator Affiliates Table */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Top Performing Creator Affiliates
+                </h4>
+                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                      <tr>
+                        <th className="p-3.5">Creator</th>
+                        <th className="p-3.5">Referral Code</th>
+                        <th className="p-3.5">Audience Clicks</th>
+                        <th className="p-3.5">Conversions</th>
+                        <th className="p-3.5">Attributed GMV</th>
+                        <th className="p-3.5">Earned Payout</th>
+                        <th className="p-3.5">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      <tr className="hover:bg-slate-50/70 transition">
+                        <td className="p-3.5 font-bold text-slate-900 flex items-center space-x-2">
+                          <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-black flex items-center justify-center text-xs">
+                            A
+                          </div>
+                          <span>Ananya Sharma</span>
+                        </td>
+                        <td className="p-3.5 font-mono text-purple-700 font-bold">ANANYA15</td>
+                        <td className="p-3.5 font-semibold text-slate-700">4,820</td>
+                        <td className="p-3.5 font-semibold text-slate-700">142 orders</td>
+                        <td className="p-3.5 font-black text-slate-900">{formatCurrency(78200)}</td>
+                        <td className="p-3.5 font-black text-purple-700">{formatCurrency(11730)}</td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[10px]">
+                            Auto-Settled
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-50/70 transition">
+                        <td className="p-3.5 font-bold text-slate-900 flex items-center space-x-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center text-xs">
+                            R
+                          </div>
+                          <span>Rahul Varma</span>
+                        </td>
+                        <td className="p-3.5 font-mono text-purple-700 font-bold">RAHULTECH</td>
+                        <td className="p-3.5 font-semibold text-slate-700">3,410</td>
+                        <td className="p-3.5 font-semibold text-slate-700">98 orders</td>
+                        <td className="p-3.5 font-black text-slate-900">{formatCurrency(54000)}</td>
+                        <td className="p-3.5 font-black text-purple-700">{formatCurrency(8100)}</td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md font-bold text-[10px]">
+                            Auto-Settled
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-50/70 transition">
+                        <td className="p-3.5 font-bold text-slate-900 flex items-center space-x-2">
+                          <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 font-black flex items-center justify-center text-xs">
+                            P
+                          </div>
+                          <span>Pooja Menon</span>
+                        </td>
+                        <td className="p-3.5 font-mono text-purple-700 font-bold">POOJA10</td>
+                        <td className="p-3.5 font-semibold text-slate-700">2,150</td>
+                        <td className="p-3.5 font-semibold text-slate-700">65 orders</td>
+                        <td className="p-3.5 font-black text-slate-900">{formatCurrency(36000)}</td>
+                        <td className="p-3.5 font-black text-purple-700">{formatCurrency(5400)}</td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md font-bold text-[10px]">
+                            Pending Release
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BRAND TAB: AI CREATOR MATCHMAKER */}
+        {activeTab === 'ai-match' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3 text-purple-600" />
+                      <span>AI Intelligence Engine</span>
+                    </span>
+                    <span className="text-xs text-slate-500 font-semibold">• Audience Synergy Algorithm</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1">
+                    AI Creator Matchmaker & Campaign Recommender
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Discover creators scored specifically for your niche, budget, and target audience with verified engagement telemetry.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => navigate('/ai-tools')}
+                  className="px-3.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl text-xs transition flex items-center space-x-1"
+                >
+                  <span>Open Full AI Suite</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Match Criteria Filter Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800">Target Category</label>
+                  <select
+                    value={dashboardMatchCategory}
+                    onChange={(e) => setDashboardMatchCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Fashion & Style">Fashion & Style</option>
+                    <option value="Technology & AI">Technology & AI</option>
+                    <option value="Fitness & Wellness">Fitness & Wellness</option>
+                    <option value="Travel & Lifestyle">Travel & Lifestyle</option>
+                    <option value="Food & Dining">Food & Dining</option>
+                    <option value="Beauty & Skincare">Beauty & Skincare</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800">Target City / Geography</label>
+                  <select
+                    value={dashboardMatchCity}
+                    onChange={(e) => setDashboardMatchCity(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                  >
+                    <option value="All India">All-India (Pan India)</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Bengaluru">Bengaluru</option>
+                    <option value="Delhi">Delhi-NCR</option>
+                    <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                    <option value="Kochi">Kochi</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-800">Campaign Budget Cap (₹)</label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="number"
+                      value={dashboardMatchBudget}
+                      onChange={(e) => setDashboardMatchBudget(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-purple-500 focus:outline-none"
+                    />
+                    <button
+                      onClick={handleRunDashboardMatch}
+                      disabled={isDashboardMatching}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1 shrink-0 shadow-xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{isDashboardMatching ? 'Matching...' : 'Match Creators'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Match Results Display */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    {dashboardMatchResults.length > 0
+                      ? `AI Recommended Creators (${dashboardMatchResults.length} High-Synergy Matches)`
+                      : 'Featured Creator Synergy Recommendations'}
+                  </h4>
+                  {dashboardMatchResults.length === 0 && (
+                    <button
+                      onClick={handleRunDashboardMatch}
+                      className="text-xs text-purple-600 font-bold hover:underline"
+                    >
+                      Click to Run Matchmaker →
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(dashboardMatchResults.length > 0
+                    ? dashboardMatchResults
+                    : creators.slice(0, 4).map((c, i) => ({
+                        creator: c,
+                        score: 95 - i * 4,
+                        reasons: [
+                          `Strong ${c.category} audience synergy`,
+                          `Hyper-local presence in ${c.location || 'India'}`,
+                          `Audience engagement rate ${(c.socialAccounts[0]?.engagementRate || 4.5)}%`
+                        ]
+                      }))
+                  ).map(({ creator, score, reasons }) => (
+                    <div
+                      key={creator.id}
+                      className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 hover:border-purple-300 transition"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={creator.avatar}
+                            alt=""
+                            className="w-12 h-12 rounded-2xl object-cover ring-2 ring-purple-100"
+                          />
+                          <div>
+                            <div className="flex items-center space-x-1.5">
+                              <h4 className="font-extrabold text-slate-900 text-sm">{creator.name}</h4>
+                              {creator.verified && (
+                                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                              )}
+                            </div>
+                            <p className="text-slate-500 text-xs">{creator.category} • {creator.location}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 border border-purple-200">
+                            ✨ {score}% Match
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold mt-0.5">Synergy Index</span>
+                        </div>
+                      </div>
+
+                      {/* AI Match Reasons */}
+                      <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-100 space-y-1">
+                        <span className="text-[10px] font-bold text-purple-800 uppercase tracking-wider block">
+                          AI Compatibility Factors:
+                        </span>
+                        <ul className="space-y-0.5 text-xs text-purple-950 font-medium">
+                          {reasons.map((r, ri) => (
+                            <li key={ri} className="flex items-center space-x-1.5 text-[11px]">
+                              <Check className="w-3 h-3 text-purple-600 shrink-0" />
+                              <span>{r}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Starting Price</span>
+                          <span className="font-black text-slate-900">{formatCurrency(creator.minPrice)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase block">Followers</span>
+                          <span className="font-black text-indigo-700">
+                            {(creator.socialAccounts?.reduce((sum, s) => sum + (s.followersCount || 0), 0) || 50000).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                        <button
+                          onClick={() => navigate(`/creator/${creator.id}`)}
+                          className="text-slate-600 hover:text-slate-900 font-bold text-xs"
+                        >
+                          View Media Kit & Rate Card →
+                        </button>
+                        <button
+                          onClick={() => navigate(`/creator/${creator.id}?action=proposal`)}
+                          className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-xs"
+                        >
+                          Invite to Campaign
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
