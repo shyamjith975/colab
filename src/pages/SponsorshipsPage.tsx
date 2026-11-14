@@ -18,7 +18,14 @@ import { SponsorshipOpportunity, SponsorshipPackage } from '../types';
 import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
 
 export const SponsorshipsPage: React.FC = () => {
-  const { sponsorships, submitSponsorshipProposal, currentUser, isLoggedIn, setShowLoginModal } = useApp();
+  const {
+    sponsorships,
+    submitSponsorshipProposal,
+    createSponsorshipOpportunity,
+    currentUser,
+    isLoggedIn,
+    setShowLoginModal
+  } = useApp();
 
   const [selectedType, setSelectedType] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,6 +33,17 @@ export const SponsorshipsPage: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<SponsorshipPackage | null>(null);
   const [proposalNote, setProposalNote] = useState('');
   const [showProposalModal, setShowProposalModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // New Sponsorship Form State
+  const [newTitle, setNewTitle] = useState('');
+  const [newType, setNewType] = useState<'college_fest' | 'conference' | 'podcast' | 'sports_tournament' | 'cultural'>('college_fest');
+  const [newLocation, setNewLocation] = useState('Bengaluru, Karnataka');
+  const [newDate, setNewDate] = useState('2026-12-15');
+  const [newFootfall, setNewFootfall] = useState(25000);
+  const [newDesc, setNewDesc] = useState('');
+  const [newPackageTitle, setNewPackageTitle] = useState<'Title Sponsor' | 'Presenting Sponsor' | 'Gold Sponsor' | 'Silver Sponsor' | 'Product Partner' | 'Media Partner' | 'Custom'>('Title Sponsor');
+  const [newPackagePrice, setNewPackagePrice] = useState(150000);
 
   const types = ['All', 'college_fest', 'conference', 'podcast', 'sports_tournament', 'cultural'];
 
@@ -79,6 +97,20 @@ export const SponsorshipsPage: React.FC = () => {
               Connect directly with college cultural fests, business conferences, sports tournaments and digital media owners.
             </p>
           </div>
+
+          <button
+            onClick={() => {
+              if (!isLoggedIn) {
+                setShowLoginModal(true);
+                return;
+              }
+              setShowCreateModal(true);
+            }}
+            className="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-2xl font-bold text-xs shadow-md shadow-indigo-200 transition shrink-0 cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>List Event Sponsorship</span>
+          </button>
         </div>
 
         {/* Filter bar */}
@@ -286,6 +318,181 @@ export const SponsorshipsPage: React.FC = () => {
                     className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs"
                   >
                     Send Sponsorship Proposal
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: List New Event Sponsorship Opportunity */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto text-xs">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+                    FEST
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 text-base">List Event Sponsorship Package</h3>
+                </div>
+                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newTitle.trim()) return;
+                  createSponsorshipOpportunity({
+                    title: newTitle.trim(),
+                    type: newType,
+                    category: 'College & Youth Festivals',
+                    location: newLocation,
+                    eventDate: newDate,
+                    expectedFootfall: Number(newFootfall),
+                    targetAudience: 'College Students & Youth Demographic',
+                    description: newDesc || `${newTitle} is one of the premier events in ${newLocation}.`,
+                    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
+                    deadline: new Date(Date.now() + 30 * 86400000).toISOString(),
+                    createdAt: new Date().toISOString(),
+                    packages: [
+                      {
+                        id: `pkg-${Date.now()}-1`,
+                        tier: newPackageTitle,
+                        price: Number(newPackagePrice),
+                        perks: ['Main stage backdrop naming', '10x10 sampling stall', 'Wristband branding'],
+                        availableSlots: 2,
+                        claimedSlots: 0
+                      }
+                    ]
+                  });
+                  alert(`Event Sponsorship "${newTitle}" published to colab.db! Sponsors can now view and submit proposals.`);
+                  setShowCreateModal(false);
+                  setNewTitle('');
+                }}
+                className="space-y-3.5"
+              >
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Event / Fest / Media Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Waves BITS Pilani Annual Cultural Fest"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Event Category</label>
+                    <select
+                      value={newType}
+                      onChange={(e) => setNewType(e.target.value as any)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
+                    >
+                      <option value="college_fest">College Cultural Fest</option>
+                      <option value="conference">Conference / Summit</option>
+                      <option value="sports_tournament">Sports Tournament</option>
+                      <option value="podcast">Podcast / Media</option>
+                      <option value="cultural">Concert & Standup</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Event Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">City / Venue</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Goa, India"
+                      value={newLocation}
+                      onChange={(e) => setNewLocation(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Expected Footfall</label>
+                    <input
+                      type="number"
+                      required
+                      min={500}
+                      value={newFootfall}
+                      onChange={(e) => setNewFootfall(Number(e.target.value))}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Package Tier Name</label>
+                    <select
+                      value={newPackageTitle}
+                      onChange={(e) => setNewPackageTitle(e.target.value as any)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
+                    >
+                      <option value="Title Sponsor">Title Sponsor</option>
+                      <option value="Presenting Sponsor">Presenting Sponsor</option>
+                      <option value="Gold Sponsor">Gold Sponsor</option>
+                      <option value="Silver Sponsor">Silver Sponsor</option>
+                      <option value="Product Partner">Product Partner</option>
+                      <option value="Media Partner">Media Partner</option>
+                      <option value="Custom">Custom Tier</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Sponsorship Fee (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      min={5000}
+                      value={newPackagePrice}
+                      onChange={(e) => setNewPackagePrice(Number(e.target.value))}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Event Description & Sponsor Visibility</label>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="Describe footfall demographics, key highlights, past sponsors..."
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition"
+                  >
+                    Publish Sponsorship to colab.db
                   </button>
                 </div>
               </form>

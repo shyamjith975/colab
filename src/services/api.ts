@@ -23,6 +23,8 @@ import {
   Message,
   Conversation,
   UserProfile,
+  UserRole,
+  AdInventoryItem,
   Review,
   Transaction,
   PlatformSettings
@@ -237,6 +239,65 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(rfp)
       }, rfp as SponsorRequirementRFP);
+    }
+  },
+
+  // 11. AUTHENTICATION (SHA-256 PASSWORD HASHING)
+  auth: {
+    async login(email: string, password: string): Promise<{ success: boolean; user?: UserProfile; token?: string; error?: string }> {
+      return fetchJson('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      }, { success: false, error: 'Database network error' });
+    },
+
+    async signup(payload: { email: string; password: string; name: string; role: UserRole; bio?: string; location?: string }): Promise<{ success: boolean; user?: UserProfile; token?: string; error?: string }> {
+      return fetchJson('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }, { success: false, error: 'Database network error' });
+    }
+  },
+
+  // 12. AD INVENTORY (AD SPACES)
+  adInventory: {
+    async getAll(): Promise<AdInventoryItem[]> {
+      return fetchJson<AdInventoryItem[]>('/ad-inventory', { method: 'GET' }, []);
+    },
+
+    async create(item: Partial<AdInventoryItem>): Promise<AdInventoryItem> {
+      return fetchJson<AdInventoryItem>('/ad-inventory', {
+        method: 'POST',
+        body: JSON.stringify(item)
+      }, item as AdInventoryItem);
+    }
+  },
+
+  // 13. LOCAL ADS
+  localAds: {
+    async getAll(): Promise<LocalAdChannel[]> {
+      return fetchJson<LocalAdChannel[]>('/local-ads', { method: 'GET' }, LOCAL_AD_CHANNELS);
+    },
+
+    async create(channel: Partial<LocalAdChannel>): Promise<LocalAdChannel> {
+      return fetchJson<LocalAdChannel>('/local-ads', {
+        method: 'POST',
+        body: JSON.stringify(channel)
+      }, channel as LocalAdChannel);
+    }
+  },
+
+  // 14. SPONSORSHIPS
+  sponsorships: {
+    async getAll(): Promise<SponsorshipOpportunity[]> {
+      return fetchJson<SponsorshipOpportunity[]>('/sponsorships', { method: 'GET' }, SPONSORSHIPS);
+    },
+
+    async create(sponsorship: Partial<SponsorshipOpportunity>): Promise<SponsorshipOpportunity> {
+      return fetchJson<SponsorshipOpportunity>('/sponsorships', {
+        method: 'POST',
+        body: JSON.stringify(sponsorship)
+      }, sponsorship as SponsorshipOpportunity);
     }
   }
 };

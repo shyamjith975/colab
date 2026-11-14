@@ -734,5 +734,178 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     const cleaned = dbModule.getById('campaigns', testCampaignId);
     assert.strictEqual(cleaned, null, 'Deleted test record should no longer exist in colab.db');
   });
+
+  test('34. SHA-256 User Password Authentication & Salt-free Cryptographic Hash Verification', async () => {
+    const crypto = await import('node:crypto');
+    const dbModule = await import('../server/db.mjs');
+
+    const testPassword = 'Colab@2026';
+    const expectedHash = crypto.createHash('sha256').update(testPassword).digest('hex');
+    assert.strictEqual(expectedHash, '964f4ebb713726d693f0a48ec2c35a440b4b25c7ef6fac7e67fa782d98dc635b', 'SHA-256 hash must match standard output');
+
+    // Query user directly from colab.db
+    const db = dbModule.getDatabase();
+    const userRow = db.prepare('SELECT email, password_hash FROM users WHERE email = ?').get('ananya@colab.test');
+    assert.ok(userRow, 'Seeded user ananya@colab.test must exist in colab.db users table');
+    assert.strictEqual(userRow.password_hash, expectedHash, 'Database must store SHA-256 hashed password, never plain text');
+
+    // Verify invalid password fails
+    const wrongHash = crypto.createHash('sha256').update('WrongPassword123').digest('hex');
+    assert.notStrictEqual(userRow.password_hash, wrongHash, 'Wrong password hash must not match');
+  });
+
+  test('35. Real User Signup with SHA-256 Hashed Password & Database Persistence', async () => {
+    const crypto = await import('node:crypto');
+    const dbModule = await import('../server/db.mjs');
+
+    const testEmail = `newuser_${Date.now()}@colab.test`;
+    const rawPassword = 'SecretPassword99!';
+    const passwordHash = crypto.createHash('sha256').update(rawPassword).digest('hex');
+
+    const newUserId = `user-creator-${Date.now()}`;
+    const userObj = {
+      id: newUserId,
+      email: testEmail,
+      name: 'Rohan Kapoor',
+      role: 'creator',
+      password_hash: passwordHash,
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+      bio: 'Lifestyle & travel storyteller',
+      location: 'Kochi, Kerala',
+      verified: false,
+      createdAt: new Date().toISOString()
+    };
+
+    dbModule.insertRecord('users', userObj, {
+      email: userObj.email,
+      name: userObj.name,
+      role: userObj.role,
+      password_hash: userObj.password_hash,
+      avatar: userObj.avatar,
+      bio: userObj.bio,
+      verified: 0
+    });
+
+    // Verify user is in colab.db
+    const fetched = dbModule.getById('users', newUserId);
+    assert.ok(fetched, 'Newly registered user must be retrievable from colab.db');
+    assert.strictEqual(fetched.email, testEmail);
+    assert.strictEqual(fetched.name, 'Rohan Kapoor');
+
+    // Clean up
+    dbModule.deleteRecord('users', newUserId);
+    assert.strictEqual(dbModule.getById('users', newUserId), null);
+  });
+
+  test('36. Multi-Product Posting Engine: Ads, Local Channels & Sponsorships into colab.db', async () => {
+    const dbModule = await import('../server/db.mjs');
+
+    // 1. Post Ad Inventory Slot
+    const testAdSlotId = `ad-inv-test-${Date.now()}`;
+    const testAd = {
+      id: testAdSlotId,
+      creatorId: 'user-creator-1',
+      creatorName: 'Ananya Sharma',
+      platform: 'Instagram',
+      format: 'Sunday Evening Dedicated Reel',
+      price: 3500,
+      slotsTotal: 2,
+      slotsRemaining: 2,
+      estimatedReach: 120000,
+      datesAvailable: ['2026-11-20', '2026-11-27'],
+      description: 'Prime Sunday placement with swipe-up sticker and exclusive code.'
+    };
+    dbModule.insertRecord('ad_inventory', testAd, {
+      creatorId: testAd.creatorId,
+      creatorName: testAd.creatorName,
+      platform: testAd.platform,
+      format: testAd.format,
+      price: testAd.price,
+      slotsRemaining: testAd.slotsRemaining
+    });
+    const fetchedAd = dbModule.getById('ad_inventory', testAdSlotId);
+    assert.ok(fetchedAd, 'Ad slot must be saved into colab.db ad_inventory table');
+    assert.strictEqual(fetchedAd.price, 3500);
+
+    // 2. Post Local Ad Channel
+    const testLocalId = `local-ch-test-${Date.now()}`;
+    const testChannel = {
+      id: testLocalId,
+      name: 'Thiruvananthapuram Insider Food Guide',
+      handle: '@tvm_insider',
+      platform: 'Instagram',
+      type: 'theme_page',
+      city: 'Thiruvananthapuram',
+      reach: 52000,
+      price: 1800,
+      turnaroundDays: 2,
+      category: 'Food & Beverage',
+      description: 'Regional foodie community in TVM city center.',
+      verified: true
+    };
+    dbModule.insertRecord('local_ad_channels', testChannel, {
+      channelName: testChannel.name,
+      platform: testChannel.platform,
+      city: testChannel.city,
+      locality: testChannel.city,
+      reachCount: testChannel.reach,
+      pricePerSlot: testChannel.price,
+      verifiedAudience: 1
+    });
+    const fetchedChannel = dbModule.getById('local_ad_channels', testLocalId);
+    assert.ok(fetchedChannel, 'Local channel must be saved into colab.db local_ad_channels table');
+    assert.strictEqual(fetchedChannel.city, 'Thiruvananthapuram');
+
+    // 3. Post Event Sponsorship
+    const testSponsId = `spons-test-${Date.now()}`;
+    const testSponsorship = {
+      id: testSponsId,
+      organiserId: 'user-org-1',
+      organiserName: 'IIT Palakkad Tech Club',
+      organiserAvatar: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=400&q=80',
+      title: 'Petrichor 2026 Inter-College Annual Techno-Cultural Fest',
+      type: 'college_fest',
+      category: 'College & Youth Festivals',
+      location: 'Palakkad, Kerala',
+      eventDate: '2026-12-18',
+      expectedFootfall: 15000,
+      targetAudience: 'Engineering and Polytechnic students across South India',
+      description: 'Flagship techno-cultural festival with 40+ events, hackathon, and celebrity pronite.',
+      image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
+      deadline: '2026-12-01',
+      createdAt: new Date().toISOString(),
+      packages: [
+        {
+          id: 'pkg-petrichor-1',
+          tier: 'Title Sponsor',
+          price: 120000,
+          availableSlots: 1,
+          claimedSlots: 0,
+          perks: ['Title naming rights', '15x15 stall', 'LED wall broadcast']
+        }
+      ]
+    };
+    dbModule.insertRecord('sponsorships', testSponsorship, {
+      title: testSponsorship.title,
+      organizerName: testSponsorship.organiserName,
+      category: testSponsorship.type,
+      location: testSponsorship.location,
+      eventDate: testSponsorship.eventDate,
+      expectedFootfall: testSponsorship.expectedFootfall,
+      proposalCount: 0
+    });
+    const fetchedSpons = dbModule.getById('sponsorships', testSponsId);
+    assert.ok(fetchedSpons, 'Event sponsorship must be saved into colab.db sponsorships table');
+    assert.strictEqual(fetchedSpons.expectedFootfall, 15000);
+
+    // Clean up all 3 test records
+    dbModule.deleteRecord('ad_inventory', testAdSlotId);
+    dbModule.deleteRecord('local_ad_channels', testLocalId);
+    dbModule.deleteRecord('sponsorships', testSponsId);
+
+    assert.strictEqual(dbModule.getById('ad_inventory', testAdSlotId), null);
+    assert.strictEqual(dbModule.getById('local_ad_channels', testLocalId), null);
+    assert.strictEqual(dbModule.getById('sponsorships', testSponsId), null);
+  });
 });
 

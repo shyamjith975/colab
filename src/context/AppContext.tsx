@@ -55,6 +55,8 @@ interface AppContextType {
   currentUser: UserProfile | null;
   isLoggedIn: boolean;
   login: (user?: UserProfile) => void;
+  loginWithPassword: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserProfile }>;
+  signupWithPassword: (payload: { email: string; password: string; name: string; role: UserRole; bio?: string; location?: string }) => Promise<{ success: boolean; error?: string; user?: UserProfile }>;
   logout: () => void;
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
@@ -114,6 +116,9 @@ interface AppContextType {
   toggleUserVerification: (userId: string) => void;
   updateCampaignStatus: (campaignId: string, status: Campaign['status']) => void;
   bookAdInventory: (inventoryId: string, date: string) => void;
+  createAdInventoryItem: (data: Omit<AdInventoryItem, 'id' | 'slotsRemaining' | 'creatorId' | 'creatorName' | 'creatorAvatar'>) => AdInventoryItem;
+  createLocalAdChannel: (data: Omit<LocalAdChannel, 'id' | 'verified'>) => LocalAdChannel;
+  createSponsorshipOpportunity: (data: Omit<SponsorshipOpportunity, 'id' | 'proposalCount' | 'verifiedOrganiser' | 'organiserId' | 'organiserName' | 'organiserAvatar'>) => SponsorshipOpportunity;
   submitSponsorshipProposal: (sponsorshipId: string, packageId: string, note: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -449,6 +454,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoggedIn(false);
     localStorage.setItem('colab_is_logged_in', 'false');
     localStorage.removeItem('colab_current_user');
+  };
+
+  const loginWithPassword = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: UserProfile }> => {
+    try {
+      const res = await api.auth.login(email, password);
+      if (res.success && res.user) {
+        setCurrentUser(res.user);
+        setIsLoggedIn(true);
+        localStorage.setItem('colab_is_logged_in', 'true');
+        localStorage.setItem('colab_current_user', JSON.stringify(res.user));
+        setShowLoginModal(false);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.error || 'Invalid email or password' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Login connection failed' };
+    }
+  };
+
+  const signupWithPassword = async (payload: { email: string; password: string; name: string; role: UserRole; bio?: string; location?: string }): Promise<{ success: boolean; error?: string; user?: UserProfile }> => {
+    try {
+      const res = await api.auth.signup(payload);
+      if (res.success && res.user) {
+        setUsers(prev => [res.user!, ...prev]);
+        setCurrentUser(res.user);
+        setIsLoggedIn(true);
+        localStorage.setItem('colab_is_logged_in', 'true');
+        localStorage.setItem('colab_current_user', JSON.stringify(res.user));
+        setShowLoginModal(false);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: res.error || 'Failed to create account' };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Signup connection failed' };
+    }
   };
 
   const switchUser = (userId: string) => {
@@ -1201,6 +1241,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const createAdInventoryItem = (data: Omit<AdInventoryItem, 'id' | 'slotsRemaining' | 'creatorId' | 'creatorName' | 'creatorAvatar'>): AdInventoryItem => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const newItem: AdInventoryItem = {
+      id: `ad-inv-${Date.now()}`,
+      creatorId: activeUser.id,
+      creatorName: activeUser.name,
+      creatorAvatar: activeUser.avatar,
+      slotsRemaining: data.slotsTotal,
+      ...data
+    };
+    setAdInventory(prev => [newItem, ...prev]);
+    api.adInventory.create(newItem).catch(() => {});
+    return newItem;
+  };
+
+  const createLocalAdChannel = (data: Omit<LocalAdChannel, 'id' | 'verified'>): LocalAdChannel => {
+    const newChannel: LocalAdChannel = {
+      id: `local-ch-${Date.now()}`,
+      verified: true,
+      ...data
+    };
+    setLocalAdChannels(prev => [newChannel, ...prev]);
+    api.localAds.create(newChannel).catch(() => {});
+    return newChannel;
+  };
+
+  const createSponsorshipOpportunity = (data: Omit<SponsorshipOpportunity, 'id' | 'proposalCount' | 'verifiedOrganiser' | 'organiserId' | 'organiserName' | 'organiserAvatar'>): SponsorshipOpportunity => {
+    const activeUser = currentUser || users[0] || DEMO_USERS[0];
+    const newSpons: SponsorshipOpportunity = {
+      id: `spons-${Date.now()}`,
+      organiserId: activeUser.id,
+      organiserName: activeUser.name,
+      organiserAvatar: activeUser.avatar,
+      verifiedOrganiser: false,
+      proposalCount: 0,
+      ...data
+    };
+    setSponsorships(prev => [newSpons, ...prev]);
+    api.sponsorships.create(newSpons).catch(() => {});
+    return newSpons;
+  };
+
   const switchSubProfile = (subProfileId: string) => {
     if (!currentUser) return;
     const updatedUser = { ...currentUser, activeSubProfileId: subProfileId };
@@ -1359,6 +1441,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...rfpData
     };
     setSponsorRfps(prev => [newRfp, ...prev]);
+    api.sponsorRfps.create(newRfp).catch(() => {});
     return newRfp;
   };
 
@@ -1368,6 +1451,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         isLoggedIn,
         login,
+        loginWithPassword,
+        signupWithPassword,
         logout,
         showLoginModal,
         setShowLoginModal,
@@ -1397,6 +1482,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         structuredEnquiries,
         negotiationQuotes,
         createSponsorRfp,
+        createAdInventoryItem,
+        createLocalAdChannel,
+        createSponsorshipOpportunity,
         switchSubProfile,
         createOrUpdateSubProfile,
         bookConsultationSlot,

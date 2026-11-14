@@ -10,6 +10,7 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,7 @@ export async function initDatabase(verbose = true) {
       email TEXT UNIQUE,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
+      password_hash TEXT,
       avatar TEXT,
       bio TEXT,
       verified INTEGER DEFAULT 0,
@@ -406,12 +408,15 @@ export async function initDatabase(verbose = true) {
     JSON.stringify(mockData.INITIAL_SETTINGS)
   );
 
-  // Seed Users
+  // Seed Users with SHA-256 password hash (default password: Colab@2026)
+  const defaultPasswordHash = crypto.createHash('sha256').update('Colab@2026').digest('hex');
   for (const u of mockData.DEMO_USERS) {
-    insertOne('users', u, {
+    const userWithHash = { ...u, password_hash: defaultPasswordHash };
+    insertOne('users', userWithHash, {
       email: u.email,
       name: u.name,
       role: u.role,
+      password_hash: defaultPasswordHash,
       avatar: u.avatar,
       bio: u.bio,
       verified: u.verified ? 1 : 0,

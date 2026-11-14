@@ -25,11 +25,22 @@ import { formatCurrency, formatCompactNumber } from '../utils';
 import { LocalAdChannel } from '../types';
 
 export const LocalAdsPage: React.FC = () => {
-  const { localAdChannels, currentUser, isLoggedIn, setShowLoginModal, bookLocalAdBundle } = useApp();
+  const { localAdChannels, currentUser, isLoggedIn, setShowLoginModal, bookLocalAdBundle, createLocalAdChannel } = useApp();
   const navigate = useNavigate();
 
   const [selectedCity, setSelectedCity] = useState<string>('Thiruvananthapuram');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [showChannelModal, setShowChannelModal] = useState(false);
+
+  // New Channel Form State
+  const [channelName, setChannelName] = useState('');
+  const [channelHandle, setChannelHandle] = useState('@tvm_guide');
+  const [channelCity, setChannelCity] = useState('Thiruvananthapuram');
+  const [channelNiche, setChannelNiche] = useState('Food & Beverage');
+  const [channelReach, setChannelReach] = useState(45000);
+  const [channelPrice, setChannelPrice] = useState(1500);
+  const [channelPlatform, setChannelPlatform] = useState<'Instagram' | 'YouTube' | 'Facebook' | 'Local Media'>('Instagram');
+
   const [selectedChannelIds, setSelectedChannelIds] = useState<string[]>([
     'local-tvm-1',
     'local-tvm-2',
@@ -107,6 +118,20 @@ export const LocalAdsPage: React.FC = () => {
               <span className="text-slate-300 block text-[10px] font-bold uppercase">Escrow Protection</span>
               <span className="font-extrabold text-white">Guaranteed Delivery Verification</span>
             </div>
+
+            <button
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginModal(true);
+                  return;
+                }
+                setShowChannelModal(true);
+              }}
+              className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-4 py-2 rounded-xl transition shadow-md flex items-center space-x-1.5 cursor-pointer ml-auto"
+            >
+              <Plus className="w-4 h-4" />
+              <span>List Your Local Page / Channel</span>
+            </button>
           </div>
         </div>
 
@@ -351,6 +376,160 @@ export const LocalAdsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal: Register Local Channel */}
+        {showChannelModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-xs">
+                    LOC
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 text-base">Register Local Creator / Channel</h3>
+                </div>
+                <button onClick={() => setShowChannelModal(false)} className="text-slate-400 hover:text-slate-600">
+                  <span className="text-lg">✕</span>
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!channelName.trim()) return;
+                  createLocalAdChannel({
+                    name: channelName.trim(),
+                    handle: channelHandle.trim(),
+                    type: 'theme_page',
+                    city: channelCity,
+                    platform: channelPlatform,
+                    turnaroundDays: 2,
+                    avatar: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+                    category: channelNiche,
+                    description: `Hyperlocal ${channelNiche} creator channel in ${channelCity}.`,
+                    reach: Number(channelReach),
+                    price: Number(channelPrice)
+                  });
+                  alert(`Local channel "${channelName}" published to colab.db! Local stores can now book ad bundles with your channel.`);
+                  setShowChannelModal(false);
+                  setChannelName('');
+                }}
+                className="space-y-3.5 text-xs"
+              >
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Channel / Page Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Trivandrum Food Trails"
+                    value={channelName}
+                    onChange={(e) => setChannelName(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Handle / ID</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="@tvm_foodies"
+                      value={channelHandle}
+                      onChange={(e) => setChannelHandle(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Platform</label>
+                    <select
+                      value={channelPlatform}
+                      onChange={(e) => setChannelPlatform(e.target.value as any)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
+                    >
+                      <option value="Instagram">Instagram</option>
+                      <option value="YouTube">YouTube</option>
+                      <option value="Regional Media">Regional Media</option>
+                      <option value="Telegram">Telegram Channel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">City Location</label>
+                    <select
+                      value={channelCity}
+                      onChange={(e) => setChannelCity(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
+                    >
+                      <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                      <option value="Kochi">Kochi</option>
+                      <option value="Bengaluru">Bengaluru</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Delhi NCR">Delhi NCR</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Niche Category</label>
+                    <select
+                      value={channelNiche}
+                      onChange={(e) => setChannelNiche(e.target.value)}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-800"
+                    >
+                      <option value="Food & Beverage">Food & Beverage</option>
+                      <option value="Fashion & Style">Fashion & Style</option>
+                      <option value="Events & Lifestyle">Events & Lifestyle</option>
+                      <option value="Tech & Gadgets">Tech & Gadgets</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Local Audience Reach</label>
+                    <input
+                      type="number"
+                      required
+                      min={1000}
+                      value={channelReach}
+                      onChange={(e) => setChannelReach(Number(e.target.value))}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Bundle Slot Fee (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      min={500}
+                      value={channelPrice}
+                      onChange={(e) => setChannelPrice(Number(e.target.value))}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowChannelModal(false)}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition"
+                  >
+                    Publish Local Channel to colab.db
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

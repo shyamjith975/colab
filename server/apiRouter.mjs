@@ -12,9 +12,11 @@ import {
   updateRecord,
   deleteRecord,
   executeRawQuery,
-  getDatabaseStats
+  getDatabaseStats,
+  getDatabase
 } from './db.mjs';
 import { initDatabase } from '../scripts/init-db.mjs';
+import crypto from 'node:crypto';
 
 // Helper to parse JSON body from incoming Node.js HTTP request
 export async function parseJsonBody(req) {
@@ -124,6 +126,153 @@ export async function handleApiRequest(req, res) {
     if (endpoint === '/db/reseed' && method === 'POST') {
       const result = await initDatabase(false);
       return sendJson(res, { success: true, message: 'colab.db re-seeded successfully', result });
+    }
+
+    // 3.5 AUTHENTICATION API (SHA-256 PASSWORD HASHING)
+    if (endpoint === '/auth/login' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { email, password } = body;
+      if (!email || !password) {
+        return sendJson(res, { error: 'Email and password are required' }, 400);
+      }
+      const hash = crypto.createHash('sha256').update(password).digest('hex');
+      const db = getDatabase();
+      const userRow = db.prepare('SELECT raw, password_hash FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+      if (!userRow) {
+        return sendJson(res, { error: 'No account found with this email address.' }, 401);
+      }
+      if (userRow.password_hash !== hash) {
+        return sendJson(res, { error: 'Invalid password. Please check your credentials.' }, 401);
+      }
+      const user = JSON.parse(userRow.raw);
+      delete user.password_hash;
+      return sendJson(res, {
+        success: true,
+        user,
+        token: `colab_jwt_${Date.now()}_${user.id}`,
+        message: 'Logged in successfully'
+      });
+    }
+
+    if (endpoint === '/auth/signup' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const { email, password, name, role, bio, location } = body;
+      if (!email || !password || !name || !role) {
+        return sendJson(res, { error: 'Name, email, password, and role are required' }, 400);
+      }
+      if (password.length < 6) {
+        return sendJson(res, { error: 'Password must be at least 6 characters long' }, 400);
+      }
+      const db = getDatabase();
+      const existing = db.prepare('SELECT id FROM users WHERE LOWER(email) = LOWER(?)').get(email);
+      if (existing) {
+        return sendJson(res, { error: 'An account with this email address already exists' }, 409);
+      }
+
+      const hash = crypto.createHash('sha256').update(password).digest('hex');
+      const newUserId = `user-${role}-${Date.now()}`;
+      const newUser = {
+        id: newUserId,
+        email: email.toLowerCase().trim(),
+        name: name.trim(),
+        role,
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        bio: bio || `Passionate ${role} on co-lab`,
+        location: location || 'India',
+        verified: false,
+        createdAt: new Date().toISOString()
+      };
+
+      insertRecord('users', { ...newUser, password_hash: hash }, {
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        password_hash: hash,
+        avatar: newUser.avatar,
+        bio: newUser.bio,
+        verified: 0
+      });
+
+      // If creator role, also create profile in creators table
+      if (role === 'creator') {
+        const cleanHandle = `@${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        const newCreator = {
+          id: newUserId,
+          handle: cleanHandle,
+          name: newUser.name,
+          category: 'Fashion & Style',
+          location: newUser.location,
+          minPrice: 1500,
+          rating: 5.0,
+          completedDeals: 0,
+          verified: false,
+          avatar: newUser.avatar,
+          coverImage: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1200&q=80',
+          bio: newUser.bio,
+          languages: ['English', 'Hindi'],
+          demographics: {
+            topAudienceAge: '18-30',
+            genderRatio: { male: 50, female: 50 },
+            topLocations: [newUser.location]
+          },
+          socialAccounts: [
+            { platform: 'Instagram', handle: cleanHandle, followers: 5000, engagementRate: 4.8, verified: false }
+          ],
+          services: [
+            { format: 'Instagram Reel (60s)', price: 2500, turnaroundDays: 3 }
+          ],
+          portfolio: []
+        };
+        insertRecord('creators', newCreator, {
+          handle: newCreator.handle,
+          name: newCreator.name,
+          category: newCreator.category,
+          location: newCreator.location,
+          minPrice: newCreator.minPrice,
+          rating: newCreator.rating,
+          completedDeals: 0,
+          verified: 0,
+          avatar: newCreator.avatar,
+          coverImage: newCreator.coverImage,
+          languages: JSON.stringify(newCreator.languages),
+          demographics: JSON.stringify(newCreator.demographics),
+          socialAccounts: JSON.stringify(newCreator.socialAccounts),
+          services: JSON.stringify(newCreator.services),
+          portfolio: JSON.stringify(newCreator.portfolio)
+        });
+      }
+
+      // If business/agency role, also create profile in businesses table
+      if (role === 'business' || role === 'agency') {
+        const newBiz = {
+          id: newUserId,
+          name: newUser.name,
+          industry: 'Retail & Consumer Goods',
+          location: newUser.location,
+          verified: false,
+          avatar: newUser.avatar,
+          coverImage: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=80',
+          campaignsCount: 0,
+          totalSpent: 0
+        };
+        insertRecord('businesses', newBiz, {
+          name: newBiz.name,
+          industry: newBiz.industry,
+          location: newBiz.location,
+          verified: 0,
+          avatar: newBiz.avatar,
+          coverImage: newBiz.coverImage,
+          campaignsCount: 0,
+          totalSpent: 0
+        });
+      }
+
+      return sendJson(res, {
+        success: true,
+        user: newUser,
+        token: `colab_jwt_${Date.now()}_${newUser.id}`,
+        message: 'Account created successfully'
+      }, 201);
     }
 
     // 4. CREATORS API
@@ -376,7 +525,30 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, getAll('users'));
     }
 
-    // 13. SPONSOR RFPS
+    // 13. SPONSORSHIPS & SPONSOR RFPS
+    if (endpoint === '/sponsorships' && method === 'GET') {
+      return sendJson(res, getAll('sponsorships'));
+    }
+    if (endpoint === '/sponsorships' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const newSpons = {
+        id: `spons-${Date.now()}`,
+        proposalCount: 0,
+        createdAt: new Date().toISOString(),
+        ...body
+      };
+      insertRecord('sponsorships', newSpons, {
+        title: newSpons.title,
+        organizerName: newSpons.organiserName || newSpons.organizerName || 'Organiser',
+        category: newSpons.type || newSpons.category || 'college_fest',
+        location: newSpons.location || 'India',
+        eventDate: newSpons.date || newSpons.eventDate,
+        expectedFootfall: newSpons.expectedAttendees || newSpons.expectedFootfall || 5000,
+        proposalCount: 0
+      });
+      return sendJson(res, newSpons, 201);
+    }
+
     if (endpoint === '/sponsor-rfps' && method === 'GET') {
       return sendJson(res, getAll('sponsor_rfps'));
     }
@@ -402,9 +574,54 @@ export async function handleApiRequest(req, res) {
       return sendJson(res, newRfp, 201);
     }
 
+    // 13.5 AD INVENTORY API
+    if (endpoint === '/ad-inventory' && method === 'GET') {
+      return sendJson(res, getAll('ad_inventory'));
+    }
+    if (endpoint === '/ad-inventory' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const newItem = {
+        id: `ad-inv-${Date.now()}`,
+        slotsRemaining: body.slotsTotal || 1,
+        slotsTotal: body.slotsTotal || 1,
+        datesAvailable: body.datesAvailable || [new Date().toISOString().slice(0, 10)],
+        createdAt: new Date().toISOString(),
+        ...body
+      };
+      insertRecord('ad_inventory', newItem, {
+        creatorId: newItem.creatorId,
+        creatorName: newItem.creatorName,
+        platform: newItem.platform,
+        format: newItem.format,
+        price: newItem.price,
+        slotsRemaining: newItem.slotsRemaining
+      });
+      return sendJson(res, newItem, 201);
+    }
+
     // 14. LOCAL ADS & COLLECTIVES
     if (endpoint === '/local-ads' && method === 'GET') {
       return sendJson(res, getAll('local_ad_channels'));
+    }
+    if (endpoint === '/local-ads' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const newChannel = {
+        id: `local-ch-${Date.now()}`,
+        verified: true,
+        rating: 5.0,
+        createdAt: new Date().toISOString(),
+        ...body
+      };
+      insertRecord('local_ad_channels', newChannel, {
+        channelName: newChannel.name || newChannel.channelName,
+        platform: newChannel.platform || 'Instagram',
+        city: newChannel.city,
+        locality: newChannel.locality || newChannel.city,
+        reachCount: newChannel.reach || newChannel.reachCount || 50000,
+        pricePerSlot: newChannel.price || newChannel.pricePerSlot || 1500,
+        verifiedAudience: 1
+      });
+      return sendJson(res, newChannel, 201);
     }
     if (endpoint === '/collectives' && method === 'GET') {
       return sendJson(res, getAll('creator_collectives'));
