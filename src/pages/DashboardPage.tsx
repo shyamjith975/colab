@@ -67,7 +67,8 @@ export const DashboardPage: React.FC = () => {
     createCampaign,
     localAdChannels,
     creatorCollectives,
-    affiliatePrograms
+    affiliatePrograms,
+    openComplianceModal
   } = useApp();
   const navigate = useNavigate();
 
@@ -677,6 +678,15 @@ export const DashboardPage: React.FC = () => {
               className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition"
             >
               Browse Marketplace
+            </button>
+
+            <button
+              onClick={() => openComplianceModal('payment')}
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition shadow-xs group"
+              title="Trust & Regulatory Compliance Center (DPDP Act 2023, RBI PA-PG, ASCI, 8-Point IP, Security)"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition" />
+              <span>Trust & Compliance Center</span>
             </button>
 
             <button
@@ -1348,6 +1358,19 @@ export const DashboardPage: React.FC = () => {
           >
             <Users className="w-3.5 h-3.5 text-indigo-600" />
             <span>👥 All Users Performance & Earnings ({creators.length + businesses.length})</span>
+          </button>
+
+          {/* COMMON TAB FOR ALL ROLES: TRUST & REGULATORY COMPLIANCE CENTER */}
+          <button
+            onClick={() => setActiveTab('compliance')}
+            className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+              activeTab === 'compliance'
+                ? 'border-emerald-600 text-emerald-800 font-black bg-emerald-50/70 rounded-t-xl shadow-2xs'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>🛡️ Trust & Regulatory Compliance</span>
           </button>
         </div>
 
@@ -2043,6 +2066,244 @@ export const DashboardPage: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TRUST & REGULATORY COMPLIANCE DASHBOARD TAB */}
+        {activeTab === 'compliance' && (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-emerald-500/20">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full">
+                      Section 12.3 & 13 Certified
+                    </span>
+                    <span className="text-xs text-emerald-300 font-medium">• Indian Regulatory Posture</span>
+                  </div>
+                  <h2 className="text-2xl font-black text-white mt-1.5 flex items-center space-x-2">
+                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                    <span>Trust, Legal & Regulatory Compliance Command Center</span>
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-1 max-w-3xl">
+                    Live regulatory enforcement: DPDP Act 2023 / DPDP Rules 2025, RBI Marketplace Escrow Framework, ASCI Influencer Guidelines 2025, 8-Point Statutory IP Licensing, and Section 12.3 platform security controls.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => openComplianceModal('payment')}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition shadow-md flex items-center space-x-1.5"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Launch Full Compliance Modal</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Badges Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5 text-center text-xs">
+                <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">DPDP Act 2023</span>
+                  <span className="font-black text-white text-sm">Compliant</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Consent & Erasure</span>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">RBI PA-PG Escrow</span>
+                  <span className="font-black text-white text-sm">Active</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Direct Nodal Route</span>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">ASCI Advertising</span>
+                  <span className="font-black text-white text-sm">100% Verified</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Promotional Tags</span>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">8-Point IP Matrix</span>
+                  <span className="font-black text-white text-sm">SHA-256 eSign</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Dual-Party Signed</span>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-3 border border-white/10">
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase block">Security 12.3</span>
+                  <span className="font-black text-white text-sm">MFA & Rate Limits</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Immutable Audit</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed Compliance Modules */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Card 1: Payment & RBI Settlement */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    Section 13.4 • Escrow & Tax
+                  </span>
+                  <span className="text-xs font-black text-emerald-700">RBI Compliant</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900">Payment Gateway & Seller Settlement</h4>
+                <p className="text-xs text-slate-500">
+                  Marketplace escrow handles all transaction holds. Platform does not hold user funds independently. Automatic 92% creator payouts with 8% platform fee and GST tax reporting.
+                </p>
+                <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>Merchant KYC & Seller Onboarding Verified</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>HMAC-SHA256 Webhook Verification</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>No Illegal Financial Holding</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openComplianceModal('payment')}
+                  className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs transition"
+                >
+                  Manage Payment & Escrow →
+                </button>
+              </div>
+
+              {/* Card 2: DPDP Act 2023 */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md">
+                    Section 13.2 • Data Privacy
+                  </span>
+                  <span className="text-xs font-black text-indigo-700">DPDP Act 2023</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900">Digital Personal Data Protection</h4>
+                <p className="text-xs text-slate-500">
+                  Purpose limitation, explicit consent workflows, clear privacy notices, and user data rights under India's Digital Personal Data Protection Act 2023 and DPDP Rules 2025.
+                </p>
+                <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>Purpose Limitation & Consent Artifacts</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>One-Click Data Erasure Workflows</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <span>Data Minimisation & 7-Yr Retention Policy</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openComplianceModal('dpdp')}
+                  className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition"
+                >
+                  View Consent & Privacy Workflows →
+                </button>
+              </div>
+
+              {/* Card 3: ASCI Advertising Compliance */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-md">
+                    Section 13.3 • Advertising
+                  </span>
+                  <span className="text-xs font-black text-amber-800">ASCI 2025</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900">Advertising Disclosure Compliance</h4>
+                <p className="text-xs text-slate-500">
+                  Compliant promotional disclosures: #Advertisement, #Ad, #Sponsored, #Collaboration, #Partnership. Validates disclosure in the first 3 lines of text and audiovisual superimposition.
+                </p>
+                <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>First 3 Lines Prominence Scan</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Reel & Video Audio Disclosure Check</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Official Social API Validation</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openComplianceModal('asci')}
+                  className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold rounded-xl text-xs transition"
+                >
+                  Check ASCI Compliance Tools →
+                </button>
+              </div>
+
+              {/* Card 4: 8-Point IP Framework */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md">
+                    Section 13.6 • Intellectual Property
+                  </span>
+                  <span className="text-xs font-black text-purple-700">Digital eSign</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900">8-Point Statutory IP Licensing</h4>
+                <p className="text-xs text-slate-500">
+                  Content ownership, usage licenses, advertising permissions, duration, exclusivity, territory, and modification rights with legally reviewed templates and SHA-256 dual-party eSign.
+                </p>
+                <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                    <span>8-Clause Legally Reviewed Licensing</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                    <span>Dual-Party SHA-256 eSign Checksum</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                    <span>Resale & Redistribution Restrictions</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openComplianceModal('ip')}
+                  className="w-full py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl text-xs transition"
+                >
+                  Inspect IP Contract Matrix →
+                </button>
+              </div>
+
+              {/* Card 5: Section 12.3 Platform Security */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4 hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md">
+                    Section 12.3 • Security Controls
+                  </span>
+                  <span className="text-xs font-black text-rose-700">RBAC & MFA</span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900">Platform Security & Audit Trail</h4>
+                <p className="text-xs text-slate-500">
+                  Role-based access control, database-level isolation, TOTP MFA for administrators, sliding-window rate limiting (120 req/min), signed file URLs, and tamper-evident audit logging.
+                </p>
+                <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>Admin Multi-Factor Authentication (TOTP)</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>Sliding Window Rate Limiter Active</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                    <span>Encrypted Credentials & Zero Client Leaks</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => openComplianceModal('security')}
+                  className="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition"
+                >
+                  View Security Controls & MFA →
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

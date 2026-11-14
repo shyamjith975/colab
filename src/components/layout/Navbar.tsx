@@ -90,17 +90,17 @@ export const Navbar: React.FC = () => {
     icon?: string;
   }
 
-  // Universal Desktop Navigation Tabs - Always visible across ALL roles and guests
+  // Universal Desktop Navigation Tabs - Core high-priority destinations
   const desktopNavTabs: NavItem[] = [
     { label: 'Creators', path: '/creators' },
     { label: 'Campaigns', path: '/campaigns' },
     { label: 'Sponsorships', path: '/sponsorships' },
-    { label: 'Local Ads', path: '/local-ads', badge: 'City' },
-    { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
+    { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
   ];
 
   // Specialized Marketplaces available in "More Markets ▾" dropdown
   const moreMarketplaceItems = [
+    { label: 'Local City Ads', path: '/local-ads', icon: '📍', desc: 'Cafe displays, transit hubs & city theme pages', badge: 'City' },
     { label: 'Creator Collectives', path: '/collectives', icon: '👥', desc: 'Pre-vetted multi-creator bundles & group bookings', badge: 'Bundle' },
     { label: 'Affiliate Marketplace', path: '/affiliates', icon: '💰', desc: 'DTC affiliate programs & pay-per-sale commissions', badge: 'Recurring' },
     { label: 'UGC & Production Pros', path: '/ugc-pros', icon: '🎬', desc: 'Dedicated videographers, editors, stylists & crew' },
@@ -237,9 +237,9 @@ export const Navbar: React.FC = () => {
 
       {/* Main Nav with clean responsive layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex items-center justify-between h-16 sm:h-18 w-full gap-2">
+        <div className="flex items-center justify-between h-16 sm:h-18 w-full gap-2 sm:gap-4">
           {/* Logo & Desktop Nav Links */}
-          <div className="flex items-center space-x-2.5 xl:space-x-5 min-w-0">
+          <div className="flex items-center space-x-2 xl:space-x-4 shrink-0">
             <Link to="/" className="flex items-center space-x-2 group shrink-0 pr-1">
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition shrink-0">
                 <span className="text-white font-extrabold text-lg sm:text-xl tracking-tighter">co</span>
@@ -255,7 +255,7 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation Links (All tabs directly visible on tab bar) */}
-            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
+            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 shrink-0">
               {desktopNavTabs.map((tab) => (
                 <Link
                   key={tab.path}
@@ -333,8 +333,8 @@ export const Navbar: React.FC = () => {
 
           {/* Search bar & Right Actions */}
           <div className="hidden md:flex items-center space-x-2 xl:space-x-3 shrink-0">
-            {/* Search Input (Responsive width) */}
-            <div className="relative w-20 md:w-28 lg:w-32 xl:w-36 focus-within:w-44 transition-all duration-200">
+            {/* Search Input (Responsive width with guaranteed space) */}
+            <div className="relative w-24 sm:w-28 md:w-32 lg:w-36 xl:w-40 focus-within:w-48 transition-all duration-200">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
@@ -401,16 +401,6 @@ export const Navbar: React.FC = () => {
                   <MessageSquare className="w-4 h-4" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-indigo-600 rounded-full"></span>
                 </Link>
-
-                {/* Trust & Compliance Center */}
-                <button
-                  onClick={() => openComplianceModal('payment')}
-                  className="hidden xl:flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition shrink-0"
-                  title="Trust & Regulatory Compliance (DPDP Act 2023, RBI PA-PG, ASCI, 8-Point IP, Security)"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Trust & Compliance</span>
-                </button>
 
                 {/* Admin shortcut if admin */}
                 {currentUser?.role === 'admin' && (

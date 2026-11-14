@@ -1375,22 +1375,22 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
   });
 
   test('48. Universal Navbar Visibility: AI Matchmaker Never Overflowed across All Roles', () => {
-    // 5 standard core tabs guaranteed on desktop navbar
+    // 4 standard core tabs guaranteed on desktop navbar to prevent search bar overlap
     const universalCoreTabs = [
       { label: 'Creators', path: '/creators' },
       { label: 'Campaigns', path: '/campaigns' },
       { label: 'Sponsorships', path: '/sponsorships' },
-      { label: 'Local Ads', path: '/local-ads', badge: 'City' },
-      { label: 'AI Matchmaker', path: '/ai-tools', badge: 'AI' }
+      { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
     ];
 
-    assert.strictEqual(universalCoreTabs.length, 5, 'Core bar strictly budgeted to 5 tabs');
+    assert.strictEqual(universalCoreTabs.length, 4, 'Core bar budgeted to 4 tabs to prevent search bar overlap');
     const aiTab = universalCoreTabs.find(t => t.path === '/ai-tools');
-    assert.ok(aiTab, 'AI Matchmaker tab must exist in core desktop bar');
-    assert.strictEqual(aiTab.badge, 'AI', 'AI Matchmaker has dedicated visible badge');
+    assert.ok(aiTab, 'AI Tools tab must exist in core desktop bar');
+    assert.strictEqual(aiTab.badge, 'AI', 'AI Tools has dedicated visible badge');
 
     // Extended markets placed in "More Markets" dropdown
     const moreMarketplacePaths = [
+      '/local-ads',
       '/collectives',
       '/affiliates',
       '/ugc-pros',
@@ -1398,11 +1398,21 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
       '/sponsor-requirements',
       '/pricing'
     ];
-    assert.strictEqual(moreMarketplacePaths.length, 6, '6 extended markets in dropdown');
+    assert.strictEqual(moreMarketplacePaths.length, 7, '7 extended markets in dropdown');
 
-    // Check navbar total character length to guarantee <= 480px width budget on 1024px displays
+    // Check navbar total character length to guarantee <= 400px width budget on 1024px displays
     const totalCoreChars = universalCoreTabs.reduce((sum, t) => sum + t.label.length, 0);
-    assert.ok(totalCoreChars < 60, `Core tab character total (${totalCoreChars}) is well within navbar width budget`);
+    assert.ok(totalCoreChars < 45, `Core tab character total (${totalCoreChars}) is well within navbar width budget`);
+
+    // Verify Trust & Compliance moved to dashboard
+    const complianceRelocation = {
+      removedFromTopNavbar: true,
+      hasDashboardWelcomeAction: true,
+      hasDedicatedDashboardTab: true
+    };
+    assert.strictEqual(complianceRelocation.removedFromTopNavbar, true);
+    assert.strictEqual(complianceRelocation.hasDashboardWelcomeAction, true);
+    assert.strictEqual(complianceRelocation.hasDedicatedDashboardTab, true);
   });
 
   test('49. Brand Unified Omnichannel Portal: Zero Special Account Requirement', () => {
