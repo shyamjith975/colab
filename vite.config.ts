@@ -2,9 +2,30 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Custom Vite plugin to handle /api/v1 routes backed by SQLite colab.db
+function colabSqliteApiPlugin() {
+  return {
+    name: 'colab-sqlite-api',
+    configureServer(server: any) {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (req.url && req.url.startsWith('/api/v1')) {
+          try {
+            const { handleApiRequest } = await import('./server/apiRouter.mjs');
+            const handled = await handleApiRequest(req, res);
+            if (handled) return;
+          } catch (err) {
+            console.error('[Vite SQLite API Error]', err);
+          }
+        }
+        next();
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), colabSqliteApiPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -15,4 +36,5 @@ export default defineConfig({
     open: false,
   },
 });
+
 

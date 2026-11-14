@@ -12,10 +12,12 @@ import {
   LogOut,
   LogIn,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Database
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
+import { DatabaseExplorerModal } from '../database/DatabaseExplorerModal';
 
 export const Navbar: React.FC = () => {
   const {
@@ -33,6 +35,7 @@ export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showDbExplorer, setShowDbExplorer] = useState(false);
   const location = useLocation();
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -183,7 +186,15 @@ export const Navbar: React.FC = () => {
             <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               {isLoggedIn ? 'Demo Mode' : 'Guest Mode'}
             </span>
-            <span className="hidden sm:inline text-slate-200 text-xs">
+            <button
+              onClick={() => setShowDbExplorer(true)}
+              className="flex items-center space-x-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition cursor-pointer"
+              title="Open Live colab.db SQLite Explorer & Query Test Runner"
+            >
+              <Database className="w-3 h-3 text-emerald-400" />
+              <span>colab.db (SQLite)</span>
+            </button>
+            <span className="hidden md:inline text-slate-200 text-xs">
               {isLoggedIn
                 ? 'Switch roles instantly to preview Creator, Brand, Deal Room, or Admin operations.'
                 : 'Browse as Guest • Log in to view full creator media kits, rate cards, and collaborate.'}
@@ -459,6 +470,17 @@ export const Navbar: React.FC = () => {
                               <span>Admin Control Panel</span>
                             </Link>
                           )}
+
+                          <button
+                            onClick={() => {
+                              setShowDbExplorer(true);
+                              setProfileDropdownOpen(false);
+                            }}
+                            className="w-full flex items-center space-x-2.5 px-4 py-2 hover:bg-emerald-50 text-emerald-800 font-medium transition text-left cursor-pointer"
+                          >
+                            <Database className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>Database Explorer (SQLite)</span>
+                          </button>
                         </div>
 
                         {/* Logout Action */}
@@ -604,6 +626,17 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
+            <button
+              onClick={() => {
+                setShowDbExplorer(true);
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold text-emerald-700 hover:bg-emerald-50 flex items-center space-x-2"
+            >
+              <Database className="w-4 h-4 text-emerald-600" />
+              <span>colab.db SQLite Explorer</span>
+            </button>
+
             {!isLoggedIn && (
               <button
                 onClick={() => {
@@ -660,6 +693,11 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       )}
+      {/* Live SQLite Database Explorer & Query Runner Modal */}
+      <DatabaseExplorerModal
+        isOpen={showDbExplorer}
+        onClose={() => setShowDbExplorer(false)}
+      />
     </header>
   );
 };

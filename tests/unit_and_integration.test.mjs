@@ -641,5 +641,98 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(determineCategory('quote'), 'negotiations');
     assert.strictEqual(determineCategory('booking'), 'bookings');
   });
+
+  test('31. SQLite Database (colab.db) File Integrity, Size, & Schema Validation', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const dbModule = await import('../server/db.mjs');
+
+    const dbPath = path.resolve('colab.db');
+    assert.ok(fs.existsSync(dbPath), 'colab.db SQLite database file must exist in workspace root');
+
+    const stats = fs.statSync(dbPath);
+    assert.ok(stats.size > 100000, `colab.db must be a substantive database file (actual: ${stats.size} bytes)`);
+
+    const dbStats = dbModule.getDatabaseStats();
+    const tableNames = Object.keys(dbStats.tables);
+    assert.ok(tableNames.length >= 20, `Database must contain all core marketplace tables (actual: ${tableNames.length})`);
+    
+    // Check specific table counts
+    assert.ok(dbStats.tables.creators >= 20, 'Creators table must have at least 20 seeded profiles');
+    assert.ok(dbStats.tables.campaigns >= 10, 'Campaigns table must have at least 10 seeded campaigns');
+    assert.ok(dbStats.tables.businesses >= 10, 'Businesses table must have at least 10 seeded businesses');
+    assert.ok(dbStats.tables.local_ad_channels >= 8, 'Local ad channels table must have at least 8 channels');
+    assert.ok(dbStats.tables.creator_collectives >= 3, 'Creator collectives must have at least 3 collectives');
+    assert.ok(dbStats.tables.booking_slots >= 4, 'Booking slots must be initialized');
+  });
+
+  test('32. SQLite Direct Query Execution & JSON Data Extraction', async () => {
+    const dbModule = await import('../server/db.mjs');
+
+    // Test getAll
+    const creators = dbModule.getAll('creators');
+    assert.ok(Array.isArray(creators), 'getAll(creators) should return an array');
+    assert.ok(creators.length >= 20, 'Should return all creators');
+    assert.ok(creators[0].name, 'Extracted creator record must have name');
+    assert.ok(creators[0].socialAccounts, 'Extracted creator record must retain full nested JSON fidelity');
+
+    // Test getById
+    const creator = dbModule.getById('creators', 'user-creator-1');
+    assert.ok(creator, 'Should retrieve creator by ID user-creator-1');
+    assert.strictEqual(creator.name, 'Ananya Sharma');
+
+    // Test executeRawQuery
+    const queryResult = dbModule.executeRawQuery('SELECT id, name, category, minPrice FROM creators WHERE minPrice <= 3000');
+    assert.ok(Array.isArray(queryResult), 'Query should return array of rows');
+    assert.ok(queryResult.length > 0, 'Should find creators with minPrice <= 3000');
+    for (const row of queryResult) {
+      assert.ok(row.minPrice <= 3000, 'All returned rows must respect query predicate');
+    }
+  });
+
+  test('33. SQLite REST API Endpoint Simulation & Live Mutation Persistence', async () => {
+    const dbModule = await import('../server/db.mjs');
+
+    // Create a new campaign test record
+    const testCampaignId = `camp-test-${Date.now()}`;
+    const testCampaign = {
+      id: testCampaignId,
+      title: 'Automated SQLite Integration Test Campaign',
+      businessId: 'user-biz-1',
+      businessName: 'Aroma Threads Boutique',
+      category: 'Fashion & Style',
+      budgetMin: 5000,
+      budgetMax: 12000,
+      status: 'active',
+      location: 'Pan-India',
+      description: 'Verifying end-to-end SQLite write and fetch persistence.',
+      requirements: {
+        minFollowers: 5000,
+        contentFormat: 'Instagram Reel'
+      }
+    };
+
+    dbModule.insertRecord('campaigns', testCampaign, {
+      title: testCampaign.title,
+      businessId: testCampaign.businessId,
+      businessName: testCampaign.businessName,
+      category: testCampaign.category,
+      budgetMin: testCampaign.budgetMin,
+      budgetMax: testCampaign.budgetMax,
+      status: testCampaign.status,
+      createdAt: new Date().toISOString()
+    });
+
+    // Read it back immediately from SQLite
+    const fetched = dbModule.getById('campaigns', testCampaignId);
+    assert.ok(fetched, 'Inserted campaign must be immediately retrievable from colab.db');
+    assert.strictEqual(fetched.title, 'Automated SQLite Integration Test Campaign');
+    assert.strictEqual(fetched.requirements.contentFormat, 'Instagram Reel');
+
+    // Clean up test record
+    dbModule.deleteRecord('campaigns', testCampaignId);
+    const cleaned = dbModule.getById('campaigns', testCampaignId);
+    assert.strictEqual(cleaned, null, 'Deleted test record should no longer exist in colab.db');
+  });
 });
 

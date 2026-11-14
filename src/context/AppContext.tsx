@@ -49,6 +49,7 @@ import {
   STRUCTURED_ENQUIRIES,
   NEGOTIATION_QUOTES
 } from '../data/mockData';
+import { api } from '../services/api';
 
 interface AppContextType {
   currentUser: UserProfile | null;
@@ -361,6 +362,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('colab_messages', JSON.stringify(messages));
   }, [messages]);
 
+  // Real SQLite Database Hydration: fetch fresh data from colab.db
+  useEffect(() => {
+    let isMounted = true;
+    const hydrateFromDatabase = async () => {
+      try {
+        const bootstrap = await api.bootstrap();
+        if (!isMounted || !bootstrap) return;
+        if (bootstrap.creators && bootstrap.creators.length > 0) {
+          setCreators(bootstrap.creators);
+        }
+        if (bootstrap.campaigns && bootstrap.campaigns.length > 0) {
+          setCampaigns(bootstrap.campaigns);
+        }
+        if (bootstrap.collaborations && bootstrap.collaborations.length > 0) {
+          setCollaborations(bootstrap.collaborations);
+        }
+        if (bootstrap.sponsorships && bootstrap.sponsorships.length > 0) {
+          setSponsorships(bootstrap.sponsorships);
+        }
+        if (bootstrap.bookingSlots && bootstrap.bookingSlots.length > 0) {
+          setBookingSlots(bootstrap.bookingSlots);
+        }
+        if (bootstrap.structuredEnquiries && bootstrap.structuredEnquiries.length > 0) {
+          setStructuredEnquiries(bootstrap.structuredEnquiries);
+        }
+        if (bootstrap.negotiationQuotes && bootstrap.negotiationQuotes.length > 0) {
+          setNegotiationQuotes(bootstrap.negotiationQuotes);
+        }
+        if (bootstrap.sponsorRfps && bootstrap.sponsorRfps.length > 0) {
+          setSponsorRfps(bootstrap.sponsorRfps);
+        }
+        if (bootstrap.conversations && bootstrap.conversations.length > 0) {
+          setConversations(bootstrap.conversations);
+        }
+        if (bootstrap.messages && bootstrap.messages.length > 0) {
+          setMessages(bootstrap.messages);
+        }
+        if (bootstrap.settings) {
+          setSettings(bootstrap.settings);
+        }
+      } catch (err) {
+        console.warn('[co-lab] Using local storage/mock fallback:', err);
+      }
+    };
+    hydrateFromDatabase();
+    return () => { isMounted = false; };
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('colab_campaigns', JSON.stringify(campaigns));
   }, [campaigns]);
@@ -384,14 +433,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('colab_settings', JSON.stringify(settings));
   }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem('colab_conversations', JSON.stringify(conversations));
-  }, [conversations]);
-
-  useEffect(() => {
-    localStorage.setItem('colab_messages', JSON.stringify(messages));
-  }, [messages]);
 
   // Actions
   const login = (user?: UserProfile) => {
@@ -461,6 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setCampaigns(prev => [newCampaign, ...prev]);
+    api.campaigns.create(newCampaign).catch(() => {});
     return newCampaign;
   };
 
@@ -524,6 +566,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setCollaborations(prev => [newCollab, ...prev]);
+    api.collaborations.create(newCollab).catch(() => {});
     updateApplicationStatus(applicationId, 'accepted');
 
     // record escrow transaction
@@ -751,6 +794,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setStructuredEnquiries(prev => [newEnquiry, ...prev]);
+    api.enquiries.create(newEnquiry).catch(() => {});
 
     // Send formatted message card into conversation
     const cardText = `📋 Structured Collaboration Enquiry: ${enquiryData.projectNeed} • Budget: ₹${enquiryData.budget.toLocaleString()}`;
@@ -801,6 +845,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setNegotiationQuotes(prev => [newQuote, ...prev]);
+    api.quotes.create(newQuote).catch(() => {});
 
     const quoteText = `💼 Formal Quotation: ₹${quoteData.currentAmount.toLocaleString()} (${quoteData.itemizedDeliverables.map(d => d.item).join(', ')})`;
     const quoteMsg: Message = {
@@ -898,6 +943,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       setCollaborations(prev => [newCollab, ...prev]);
+      api.collaborations.create(newCollab).catch(() => {});
 
       const acceptMsgText = `🤝 Deal Accepted at ₹${finalPrice.toLocaleString()}! Digital agreement locked and escrow secured.`;
       const acceptMsg: Message = {
@@ -1036,6 +1082,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setCollaborations(prev => [newCollab, ...prev]);
+    api.collaborations.create(newCollab).catch(() => {});
+    api.bookingSlots.book(slotId, activeUser.name).catch(() => {});
 
     // 3. Post booking confirmation card to conversation thread
     const bookingMsgText = `📅 Instant Booking Confirmed: ${serviceTitle} on ${date} (${timeSlot}) • ₹${price.toLocaleString()} secured in escrow.`;
@@ -1258,6 +1306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ]
     };
     setCollaborations(prev => [newCollab, ...prev]);
+    api.collaborations.create(newCollab).catch(() => {});
     return newCollab;
   };
 
@@ -1295,6 +1344,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })) || []
     };
     setCollaborations(prev => [newCollab, ...prev]);
+    api.collaborations.create(newCollab).catch(() => {});
     return newCollab;
   };
 
