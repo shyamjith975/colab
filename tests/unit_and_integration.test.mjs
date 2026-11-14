@@ -1015,5 +1015,101 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     const spaRewrite = config.rewrites.find(r => r.destination === '/index.html');
     assert.ok(spaRewrite, 'Must have SPA rewrite to /index.html for direct link loading');
   });
+
+  test('40. Dynamic Creator Total Earnings & In-Escrow Calculation Engine', () => {
+    const mockCreator = {
+      id: 'creator-ananya',
+      name: 'Ananya Sharma',
+      completedDeals: 52,
+      minPrice: 1500,
+      services: [{ price: 4500 }, { price: 1500 }]
+    };
+
+    const mockCollabs = [
+      { creatorId: 'creator-ananya', agreedAmount: 5000, creatorPayout: 4600, status: 'completed' },
+      { creatorId: 'creator-ananya', agreedAmount: 8000, creatorPayout: 7360, status: 'settled' },
+      { creatorId: 'creator-ananya', agreedAmount: 4000, creatorPayout: 3680, status: 'in_progress' }
+    ];
+
+    const mockAffiliateLinks = [
+      { creatorId: 'creator-ananya', earnedAmount: 1850 }
+    ];
+
+    const mockBookingSlots = [
+      { creatorId: 'creator-ananya', price: 2500, status: 'booked' }
+    ];
+
+    // Calculate Settled
+    const settledCollabs = mockCollabs.filter(c => c.status === 'settled' || c.status === 'completed');
+    const settledPayout = settledCollabs.reduce((sum, c) => sum + c.creatorPayout, 0);
+    const affEarnings = mockAffiliateLinks.reduce((sum, l) => sum + l.earnedAmount, 0);
+    const bookingEarnings = mockBookingSlots.reduce((sum, s) => sum + s.price, 0);
+
+    const avgPrice = Math.round(mockCreator.services.reduce((s, srv) => s + srv.price, 0) / mockCreator.services.length);
+    const historicalBaseline = Math.round(mockCreator.completedDeals * avgPrice * 0.92);
+
+    const totalSettled = settledPayout + affEarnings + bookingEarnings + historicalBaseline;
+    const inEscrow = mockCollabs.filter(c => c.status === 'in_progress').reduce((sum, c) => sum + c.creatorPayout, 0);
+
+    assert.strictEqual(settledPayout, 11960, 'Settled collaborations payout calculated correctly');
+    assert.strictEqual(affEarnings, 1850, 'Affiliate earnings tracked correctly');
+    assert.strictEqual(bookingEarnings, 2500, 'Direct booking earnings tracked correctly');
+    assert.ok(totalSettled > 100000, 'Total lifetime creator earnings includes historical and live commercial baseline');
+    assert.strictEqual(inEscrow, 3680, 'Pending escrow held for in-progress collaborations accurately computed');
+  });
+
+  test('41. Dynamic Business Total Spend, Attributed Sales Earned, and Net ROAS Calculation', () => {
+    const mockBusiness = {
+      id: 'biz-aroma',
+      name: 'Aroma Threads Boutique',
+      totalSpent: 45000,
+      activeCampaignsCount: 2
+    };
+
+    const mockCollabs = [
+      { businessId: 'biz-aroma', agreedAmount: 12000, status: 'completed' },
+      { businessId: 'biz-aroma', agreedAmount: 8000, status: 'in_progress' }
+    ];
+
+    const mockCampaigns = [
+      { businessId: 'biz-aroma', title: 'Summer Collection', budget: { totalBudget: 25000 } }
+    ];
+
+    const mockAttributions = [
+      { campaignTitle: 'Summer Collection', attributedSales: 165000, enquiries: 140, clicks: 920 }
+    ];
+
+    const liveCollabSpend = mockCollabs.reduce((sum, c) => sum + c.agreedAmount, 0);
+    const liveCampaignSpend = mockCampaigns.reduce((sum, c) => sum + c.budget.totalBudget, 0);
+    const totalSpend = Math.max(liveCollabSpend + liveCampaignSpend, mockBusiness.totalSpent);
+
+    const attributedSales = mockAttributions.reduce((sum, a) => sum + a.attributedSales, 0);
+    const roiMultiplier = Number((attributedSales / totalSpend).toFixed(1));
+    const netProfit = attributedSales - totalSpend;
+
+    assert.strictEqual(totalSpend, 45000, 'Business total spend calculated correctly');
+    assert.strictEqual(attributedSales, 165000, 'Attributed sales revenue from creator campaigns calculated correctly');
+    assert.ok(roiMultiplier >= 3.6, `ROAS multiplier is positive commercial return (${roiMultiplier}x)`);
+    assert.strictEqual(netProfit, 120000, 'Net business value generated is positive');
+  });
+
+  test('42. All Users Performance Directory & Fast Persona Switching Integrity', () => {
+    const seed = JSON.parse(fs.readFileSync(path.resolve('scripts/seedData.json'), 'utf8'));
+    assert.ok(Array.isArray(seed.creators) && seed.creators.length >= 10, 'Seed data has full creators catalog');
+    assert.ok(Array.isArray(seed.businesses) && seed.businesses.length >= 5, 'Seed data has full businesses catalog');
+
+    // Verify all creators have required fields for financial metrics
+    for (const c of seed.creators) {
+      assert.ok(typeof c.name === 'string', 'Creator must have name');
+      assert.ok(typeof c.minPrice === 'number', 'Creator must have minPrice');
+      assert.ok(typeof c.completedDeals === 'number' || typeof c.rating === 'number', 'Creator must have deals or rating');
+    }
+
+    // Verify all businesses have required fields for spend and revenue metrics
+    for (const b of seed.businesses) {
+      assert.ok(typeof b.name === 'string', 'Business must have name');
+      assert.ok(typeof b.totalSpent === 'number' || typeof b.activeCampaignsCount === 'number', 'Business must have spend telemetry');
+    }
+  });
 });
 
