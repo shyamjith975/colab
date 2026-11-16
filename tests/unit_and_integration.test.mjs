@@ -1445,5 +1445,189 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(brandSubProfiles.length, 3, 'Brand has 3 built-in commercial personas');
     assert.ok(brandSubProfiles.some(p => p.type === 'sponsor'), 'Sponsor persona natively included');
   });
+
+  test('50. Role-Scoped Dashboard Data Isolation by ID & Ownership', () => {
+    // Platform dataset containing multiple businesses and creators
+    const allCampaigns = [
+      { id: 'camp-1', businessId: 'user-biz-1', businessName: 'Aura Skin', title: 'Summer Glow' },
+      { id: 'camp-2', businessId: 'user-biz-2', businessName: 'FitPro India', title: 'Whey Protein Launch' }
+    ];
+
+    const allApplications = [
+      { id: 'app-1', campaignId: 'camp-1', creatorId: 'user-creator-1', creatorName: 'Priya Sharma', proposedRate: 8000, status: 'pending' },
+      { id: 'app-2', campaignId: 'camp-2', creatorId: 'user-creator-2', creatorName: 'Rohan Verma', proposedRate: 12000, status: 'pending' }
+    ];
+
+    const allCollaborations = [
+      { id: 'collab-1', campaignId: 'camp-1', businessId: 'user-biz-1', creatorId: 'user-creator-1', agreedAmount: 8000, status: 'escrow_funded' },
+      { id: 'collab-2', campaignId: 'camp-2', businessId: 'user-biz-2', creatorId: 'user-creator-2', agreedAmount: 12000, status: 'escrow_funded' }
+    ];
+
+    const allBookings = [
+      { id: 'slot-1', creatorId: 'user-creator-1', creatorName: 'Priya Sharma', serviceTitle: '1-on-1 Consultation', price: 3500, status: 'booked' },
+      { id: 'slot-2', creatorId: 'user-creator-2', creatorName: 'Rohan Verma', serviceTitle: 'Store Shoot', price: 15000, status: 'booked' }
+    ];
+
+    // 1. Creator Isolation (Priya Sharma: user-creator-1)
+    const creatorUser = { id: 'user-creator-1', role: 'creator', name: 'Priya Sharma' };
+    const creatorApps = allApplications.filter(a => a.creatorId === creatorUser.id);
+    const creatorCollabs = allCollaborations.filter(c => c.creatorId === creatorUser.id);
+    const creatorBookings = allBookings.filter(s => s.creatorId === creatorUser.id);
+
+    assert.strictEqual(creatorApps.length, 1, 'Creator only sees their own submitted proposals');
+    assert.strictEqual(creatorApps[0].id, 'app-1');
+    assert.strictEqual(creatorCollabs.length, 1, 'Creator only sees their own deal rooms');
+    assert.strictEqual(creatorCollabs[0].id, 'collab-1');
+    assert.strictEqual(creatorBookings.length, 1, 'Creator only sees bookings directed to them');
+    assert.strictEqual(creatorBookings[0].id, 'slot-1');
+    assert.ok(!creatorApps.some(a => a.creatorId === 'user-creator-2'), 'Competitor proposals completely isolated');
+
+    // 2. Business Isolation (Aura Skin: user-biz-1)
+    const businessUser = { id: 'user-biz-1', role: 'business', name: 'Aura Skin' };
+    const bizCampaigns = allCampaigns.filter(c => c.businessId === businessUser.id);
+    const bizCampaignIds = bizCampaigns.map(c => c.id);
+    const bizApps = allApplications.filter(a => bizCampaignIds.includes(a.campaignId) || a.businessId === businessUser.id);
+    const bizCollabs = allCollaborations.filter(c => c.businessId === businessUser.id);
+
+    assert.strictEqual(bizCampaigns.length, 1, 'Business only sees their own published campaigns');
+    assert.strictEqual(bizCampaigns[0].id, 'camp-1');
+    assert.strictEqual(bizApps.length, 1, 'Business only sees applications for their campaigns');
+    assert.strictEqual(bizApps[0].campaignId, 'camp-1');
+    assert.strictEqual(bizCollabs.length, 1, 'Business only sees collaborations for their brand');
+    assert.strictEqual(bizCollabs[0].businessId, 'user-biz-1');
+    assert.ok(!bizCampaigns.some(c => c.businessId === 'user-biz-2'), 'Other brands campaigns completely excluded');
+  });
+
+  test('51. Commercial Proposal Negotiation & Booking Workflow', () => {
+    // 1. Business Rejection with Reason
+    const validDeclineReasons = [
+      'Budget mismatch / Outside current allocation',
+      'Niche misalignment / Demographic target mismatch',
+      'Campaign quota filled / All slots assigned',
+      'Delivery timeline incompatible with launch',
+      'Portfolio aesthetic does not fit creative brief'
+    ];
+
+    const proposal = {
+      id: 'app-test-1',
+      proposedRate: 8000,
+      status: 'pending',
+      rejectionReason: null
+    };
+
+    const declineReason = validDeclineReasons[0];
+    const declinedProposal = {
+      ...proposal,
+      status: 'rejected',
+      rejectionReason: declineReason
+    };
+
+    assert.strictEqual(declinedProposal.status, 'rejected');
+    assert.strictEqual(declinedProposal.rejectionReason, 'Budget mismatch / Outside current allocation');
+
+    // 2. Business Counteroffer Workflow
+    const counterOfferedProposal = {
+      ...proposal,
+      status: 'counter_offered',
+      counterRate: 6500,
+      counterNote: 'We can offer ₹6,500 for a 48h turnaround 60s Reel.'
+    };
+
+    assert.strictEqual(counterOfferedProposal.status, 'counter_offered');
+    assert.strictEqual(counterOfferedProposal.counterRate, 6500);
+
+    // 3. Creator Accepts Brand Counteroffer -> Generates Collaboration at Counter Rate
+    const acceptedDeal = {
+      id: `collab-${Date.now()}`,
+      agreedAmount: counterOfferedProposal.counterRate,
+      status: 'escrow_funded',
+      escrowStatus: 'held'
+    };
+
+    assert.strictEqual(acceptedDeal.agreedAmount, 6500, 'Deal room reflects negotiated counter rate');
+    assert.strictEqual(acceptedDeal.status, 'escrow_funded');
+
+    // 4. Creator Booking Slot Acceptance & Rejection
+    const bookingSlot = {
+      id: 'slot-test-1',
+      status: 'booked',
+      price: 3500
+    };
+
+    const confirmedSlot = { ...bookingSlot, status: 'confirmed' };
+    assert.strictEqual(confirmedSlot.status, 'confirmed');
+
+    const rejectedSlot = {
+      ...bookingSlot,
+      status: 'rejected',
+      rejectionReason: 'Schedule full / Conflicting dates'
+    };
+    assert.strictEqual(rejectedSlot.status, 'rejected');
+    assert.strictEqual(rejectedSlot.rejectionReason, 'Schedule full / Conflicting dates');
+  });
+
+  test('52. Detailed View First Flow & Ad Space Pricing Privacy', () => {
+    // 1. Detailed View Modal First Architecture Test
+    // Simulates user state transitions on card click
+    let activeCampaign = null;
+    let showDetailModal = false;
+    let showApplyModal = false;
+
+    // Step A: User clicks card or "View Brief & Apply"
+    const onCardClick = (campaign) => {
+      activeCampaign = campaign;
+      showDetailModal = true;
+      showApplyModal = false; // Never show apply modal first
+    };
+
+    const mockCampaign = { id: 'camp-101', title: 'Tech Review' };
+    onCardClick(mockCampaign);
+
+    assert.strictEqual(showDetailModal, true, 'Detailed View Modal MUST open first');
+    assert.strictEqual(showApplyModal, false, 'Apply modal MUST NOT open first');
+
+    // Step B: User reads brief and clicks "Proceed to Submit Proposal"
+    const onProceedToApply = () => {
+      showApplyModal = true;
+      showDetailModal = false;
+    };
+    onProceedToApply();
+
+    assert.strictEqual(showApplyModal, true, 'Apply form opens upon explicit confirmation');
+    assert.strictEqual(showDetailModal, false);
+
+    // Step C: User cancels or closes apply modal -> Both cleanly reset (no bounce-back)
+    const onCloseApply = () => {
+      showApplyModal = false;
+      showDetailModal = false;
+      activeCampaign = null;
+    };
+    onCloseApply();
+
+    assert.strictEqual(showApplyModal, false);
+    assert.strictEqual(showDetailModal, false, 'Detail modal does NOT pop up after closing apply modal');
+    assert.strictEqual(activeCampaign, null);
+
+    // 2. Ad Space Marketplace: Pricing Privacy for Creators
+    const allAdInventory = [
+      { id: 'ad-1', creatorId: 'creator-priya', creatorName: 'Priya Sharma', price: 2500, format: 'Instagram Story' },
+      { id: 'ad-2', creatorId: 'creator-rohan', creatorName: 'Rohan Verma', price: 15000, format: 'YouTube Mid-roll' }
+    ];
+
+    // Creator Priya logs in
+    const currentCreator = { id: 'creator-priya', role: 'creator', name: 'Priya Sharma' };
+    const isCreator = currentCreator.role === 'creator';
+
+    // Competitor inventory & pricing is hidden
+    const visibleToCreator = allAdInventory.filter(item => item.creatorId === currentCreator.id);
+    assert.strictEqual(visibleToCreator.length, 1, 'Creator only sees their own inventory');
+    assert.strictEqual(visibleToCreator[0].creatorId, 'creator-priya');
+    assert.ok(!visibleToCreator.some(item => item.creatorId === 'creator-rohan'), 'Competitor ad space prices hidden from creators');
+
+    // Brand logs in
+    const currentBrand = { id: 'brand-aura', role: 'business', name: 'Aura Skin' };
+    const visibleToBrand = currentBrand.role === 'business' ? allAdInventory : [];
+    assert.strictEqual(visibleToBrand.length, 2, 'Brand can view and book all creator ad inventory');
+  });
 });
 

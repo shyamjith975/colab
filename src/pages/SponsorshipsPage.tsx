@@ -32,6 +32,7 @@ export const SponsorshipsPage: React.FC = () => {
   const [activeOpportunity, setActiveOpportunity] = useState<SponsorshipOpportunity | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<SponsorshipPackage | null>(null);
   const [proposalNote, setProposalNote] = useState('');
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -60,14 +61,21 @@ export const SponsorshipsPage: React.FC = () => {
     return true;
   });
 
-  const handleOpenProposal = (opp: SponsorshipOpportunity, pkg: SponsorshipPackage) => {
+  const handleOpenDetails = (opp: SponsorshipOpportunity, pkg?: SponsorshipPackage, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setActiveOpportunity(opp);
+    setSelectedPackage(pkg || opp.packages[0] || null);
+    setShowDetailModal(true);
+    setShowProposalModal(false);
+  };
+
+  const handleProceedToProposal = (pkg?: SponsorshipPackage) => {
     if (!isLoggedIn || !currentUser) {
       setShowLoginModal(true);
       return;
     }
-    setActiveOpportunity(opp);
-    setSelectedPackage(pkg);
-    setProposalNote('');
+    if (pkg) setSelectedPackage(pkg);
+    setShowDetailModal(false);
     setShowProposalModal(true);
   };
 
@@ -78,6 +86,10 @@ export const SponsorshipsPage: React.FC = () => {
     submitSponsorshipProposal(activeOpportunity.id, selectedPackage.id, proposalNote);
     alert(`Sponsorship proposal for ${selectedPackage.tier} submitted to ${activeOpportunity.organiserName}! The organiser will review your brand details.`);
     setShowProposalModal(false);
+    setShowDetailModal(false);
+    setActiveOpportunity(null);
+    setSelectedPackage(null);
+    setProposalNote('');
   };
 
   return (
@@ -226,11 +238,11 @@ export const SponsorshipsPage: React.FC = () => {
                           </div>
 
                           <button
-                            onClick={() => handleOpenProposal(opp, pkg)}
+                            onClick={(e) => handleOpenDetails(opp, pkg, e)}
                             disabled={pkg.claimedSlots >= pkg.availableSlots}
                             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold px-3.5 py-1.5 rounded-lg transition shadow-xs"
                           >
-                            Propose Deal
+                            View Tier & Apply
                           </button>
                         </div>
                       ))}
@@ -242,18 +254,187 @@ export const SponsorshipsPage: React.FC = () => {
               {/* Bottom footer */}
               <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>{opp.proposalCount} Brand Proposals Submitted</span>
-                <span>Deadline: {formatDate(opp.deadline)}</span>
+                <button
+                  onClick={() => handleOpenDetails(opp)}
+                  className="font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                >
+                  View Event Details & All Tiers →
+                </button>
               </div>
             </div>
           ))}
         </div>
 
-        {/* PROPOSAL MODAL */}
+        {/* ========================================================================= */}
+        {/* MODAL 1: SPONSORSHIP OPPORTUNITY DETAILED VIEW FIRST                      */}
+        {/* ========================================================================= */}
+        {showDetailModal && activeOpportunity && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={activeOpportunity.organiserAvatar}
+                    alt=""
+                    className="w-12 h-12 rounded-2xl object-cover border border-slate-200"
+                  />
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{activeOpportunity.title}</h3>
+                    <p className="text-xs text-slate-500 font-medium">Organised by {activeOpportunity.organiserName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setActiveOpportunity(null);
+                    setSelectedPackage(null);
+                  }}
+                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden relative h-48 border border-slate-100">
+                <img src={activeOpportunity.image} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent"></div>
+                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white text-xs font-semibold">
+                  <span className="flex items-center space-x-1.5">
+                    <MapPin className="w-4 h-4 text-indigo-400" />
+                    <span>{activeOpportunity.location}</span>
+                  </span>
+                  <span className="bg-indigo-600 px-3 py-1 rounded-lg font-bold">
+                    Event Date: {formatDate(activeOpportunity.eventDate)}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 mb-1">About the Opportunity</h4>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {activeOpportunity.description}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Expected Footfall / Audience</span>
+                  <span className="font-extrabold text-indigo-700 text-base">
+                    {formatCompactNumber(activeOpportunity.expectedFootfall)}+ Attendees
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Demographic Target</span>
+                  <span className="font-bold text-slate-800 text-xs">
+                    {activeOpportunity.targetAudience}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tiers List */}
+              <div className="space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                  Select a Sponsorship Package ({activeOpportunity.packages.length} Options)
+                </span>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {activeOpportunity.packages.map((pkg) => {
+                    const isSelected = selectedPackage?.id === pkg.id;
+                    const isSoldOut = pkg.claimedSlots >= pkg.availableSlots;
+                    return (
+                      <div
+                        key={pkg.id}
+                        onClick={() => !isSoldOut && setSelectedPackage(pkg)}
+                        className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          isSelected
+                            ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-500/20'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        } ${isSoldOut ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-extrabold text-slate-900 text-sm">{pkg.tier}</span>
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                              {pkg.availableSlots - pkg.claimedSlots} of {pkg.availableSlots} Slots Left
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1 text-[11px] text-slate-600">
+                            {pkg.perks.map((p, i) => (
+                              <span key={i} className="bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                                ✓ {p}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center sm:flex-col sm:items-end justify-between shrink-0">
+                          <span className="text-base font-black text-indigo-700">
+                            {formatCurrency(pkg.price)}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isSoldOut}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProceedToProposal(pkg);
+                            }}
+                            className={`mt-1 text-xs font-bold px-4 py-1.5 rounded-xl transition ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            }`}
+                          >
+                            {isSoldOut ? 'Sold Out' : 'Select Tier →'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  onClick={() => {
+                    setShowDetailModal(false);
+                    setActiveOpportunity(null);
+                    setSelectedPackage(null);
+                  }}
+                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold"
+                >
+                  Close
+                </button>
+
+                {selectedPackage && selectedPackage.claimedSlots < selectedPackage.availableSlots && (
+                  <button
+                    onClick={() => handleProceedToProposal(selectedPackage)}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-200 transition"
+                  >
+                    Proceed with {selectedPackage.tier} Proposal →
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 2: PROPOSAL MODAL (OPENS AFTER PROCEEDING FROM DETAILS)             */}
+        {/* ========================================================================= */}
         {showProposalModal && activeOpportunity && selectedPackage && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProposalModal(false);
+                      setShowDetailModal(true);
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold mb-1 flex items-center space-x-1"
+                  >
+                    <span>← Back to Event Details</span>
+                  </button>
                   <h3 className="text-lg font-bold text-slate-900">
                     Sponsorship Offer: {selectedPackage.tier}
                   </h3>
@@ -261,8 +442,16 @@ export const SponsorshipsPage: React.FC = () => {
                     Propose partnership to {activeOpportunity.organiserName}.
                   </p>
                 </div>
-                <button onClick={() => setShowProposalModal(false)}>
-                  <X className="w-5 h-5 text-slate-500" />
+                <button
+                  onClick={() => {
+                    setShowProposalModal(false);
+                    setShowDetailModal(false);
+                    setActiveOpportunity(null);
+                    setSelectedPackage(null);
+                  }}
+                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -308,14 +497,19 @@ export const SponsorshipsPage: React.FC = () => {
                 <div className="flex justify-end space-x-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowProposalModal(false)}
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl"
+                    onClick={() => {
+                      setShowProposalModal(false);
+                      setShowDetailModal(false);
+                      setActiveOpportunity(null);
+                      setSelectedPackage(null);
+                    }}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs"
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition"
                   >
                     Send Sponsorship Proposal
                   </button>

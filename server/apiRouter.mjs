@@ -371,6 +371,17 @@ export async function handleApiRequest(req, res) {
       });
       return sendJson(res, newApp, 201);
     }
+    if (endpoint === '/campaign-applications/status' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const app = getById('campaign_applications', body.applicationId);
+      if (!app) return sendJson(res, { error: 'Application not found' }, 404);
+      const updates = { status: body.status };
+      if (body.rejectionReason !== undefined) updates.rejectionReason = body.rejectionReason;
+      if (body.counterRate !== undefined) updates.counterRate = body.counterRate;
+      if (body.counterNote !== undefined) updates.counterNote = body.counterNote;
+      const updated = updateRecord('campaign_applications', body.applicationId, updates);
+      return sendJson(res, updated);
+    }
 
     // 7. COLLABORATIONS & SMART DEAL ROOMS
     if (endpoint === '/collaborations' && method === 'GET') {
@@ -487,6 +498,17 @@ export async function handleApiRequest(req, res) {
         status: 'booked',
         clientName: body.clientName || 'Partner Brand'
       });
+      return sendJson(res, updated);
+    }
+    if (endpoint === '/booking-slots/status' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const slot = getById('booking_slots', body.slotId);
+      if (!slot) return sendJson(res, { error: 'Slot not found' }, 404);
+      const updates = { status: body.status };
+      if (body.rejectionReason !== undefined) updates.rejectionReason = body.rejectionReason;
+      if (body.counterRate !== undefined) updates.counterRate = body.counterRate;
+      if (body.counterNote !== undefined) updates.counterNote = body.counterNote;
+      const updated = updateRecord('booking_slots', body.slotId, updates);
       return sendJson(res, updated);
     }
 

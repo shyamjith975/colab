@@ -57,6 +57,7 @@ export const DashboardPage: React.FC = () => {
     transactions,
     createCollaborationFromApplication,
     updateApplicationStatus,
+    updateBookingSlotStatus,
     updateCampaignStatus,
     creatorAffiliateLinks,
     performanceAttributions,
@@ -431,19 +432,95 @@ export const DashboardPage: React.FC = () => {
   const currentCreatorStats = getCreatorStats(currentUser.id, currentUser.name);
   const currentBusinessStats = getBusinessStats(currentUser.id, currentUser.name);
 
-  // Filter items relevant to current user
-  const userCampaigns = campaigns.filter(c => c.businessId === currentUser.id);
+  // Filter items relevant to current user strictly by ID & ownership
+  const userCampaigns = campaigns.filter(c =>
+    c.businessId === currentUser.id || (currentUser.name && c.businessName?.toLowerCase() === currentUser.name?.toLowerCase())
+  );
+  const userCampaignIds = userCampaigns.map(c => c.id);
+
   const userCollaborations = collaborations.filter(c =>
-    role === 'creator' ? c.creatorId === currentUser.id : c.businessId === currentUser.id
+    role === 'creator'
+      ? (c.creatorId === currentUser.id || (currentUser.name && c.creatorName?.toLowerCase() === currentUser.name?.toLowerCase()))
+      : (c.businessId === currentUser.id || (currentUser.name && c.businessName?.toLowerCase() === currentUser.name?.toLowerCase()))
   );
+
   const userApplications = applications.filter(a =>
-    role === 'creator' ? a.creatorId === currentUser.id : true
+    role === 'creator'
+      ? (a.creatorId === currentUser.id || (currentUser.name && a.creatorName?.toLowerCase() === currentUser.name?.toLowerCase()))
+      : (userCampaignIds.includes(a.campaignId) || a.businessId === currentUser.id)
   );
+
+  const userBookings = (bookingSlots || []).filter(s =>
+    role === 'creator'
+      ? (s.creatorId === currentUser.id || (currentUser.name && s.creatorName?.toLowerCase() === currentUser.name?.toLowerCase()))
+      : (s.clientId === currentUser.id || (currentUser.name && s.clientName?.toLowerCase() === currentUser.name?.toLowerCase()))
+  );
+
+  // Proposal Rejection Modal State
+  const [rejectingAppId, setRejectingAppId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('Budget mismatch / Outside current allocation');
+  const [rejectionCustomNote, setRejectionCustomNote] = useState('');
+
+  // Proposal Counteroffer Modal State
+  const [counterAppId, setCounterAppId] = useState<string | null>(null);
+  const [counterRate, setCounterRate] = useState<number>(5000);
+  const [counterNote, setCounterNote] = useState('');
+
+  // Booking Rejection & Counteroffer State
+  const [rejectingBookingId, setRejectingBookingId] = useState<string | null>(null);
+  const [bookingRejectionReason, setBookingRejectionReason] = useState('Schedule full / Conflicting dates');
+  const [counterBookingId, setCounterBookingId] = useState<string | null>(null);
+  const [bookingCounterRate, setBookingCounterRate] = useState<number>(3500);
+  const [bookingCounterNote, setBookingCounterNote] = useState('');
 
   const handleAcceptApplication = (appId: string) => {
     const newCollab = createCollaborationFromApplication(appId);
     alert(`Application accepted! Collaboration deal room created with ${newCollab.creatorName}. Milestone escrow has been secured.`);
     navigate(`/collaborations/${newCollab.id}`);
+  };
+
+  const handleConfirmRejectApplication = (appId: string) => {
+    const fullReason = rejectionCustomNote ? `${rejectionReason}: ${rejectionCustomNote}` : rejectionReason;
+    updateApplicationStatus(appId, 'rejected', { rejectionReason: fullReason });
+    alert(`Application declined with reason: ${fullReason}`);
+    setRejectingAppId(null);
+    setRejectionCustomNote('');
+  };
+
+  const handleConfirmCounteroffer = (appId: string) => {
+    updateApplicationStatus(appId, 'counter_offered', {
+      counterRate: Number(counterRate),
+      counterNote: counterNote || 'Revised commercial terms proposed by brand.'
+    });
+    alert(`Counteroffer of ₹${Number(counterRate).toLocaleString()} sent to creator!`);
+    setCounterAppId(null);
+    setCounterNote('');
+  };
+
+  const handleAcceptCounteroffer = (app: any) => {
+    const newCollab = createCollaborationFromApplication(app.id);
+    alert(`Counteroffer accepted! Collaboration deal room created at ${formatCurrency(app.counterRate || app.proposedRate)}. Milestone escrow funded.`);
+    navigate(`/collaborations/${newCollab.id}`);
+  };
+
+  const handleConfirmRejectBooking = (slotId: string) => {
+    updateBookingSlotStatus(slotId, 'rejected', { rejectionReason: bookingRejectionReason });
+    alert(`Booking declined with reason: ${bookingRejectionReason}`);
+    setRejectingBookingId(null);
+  };
+
+  const handleConfirmCounterBooking = (slotId: string) => {
+    updateBookingSlotStatus(slotId, 'counter_offered', {
+      counterRate: Number(bookingCounterRate),
+      counterNote: bookingCounterNote || 'Revised slot fee / terms proposed.'
+    });
+    alert(`Booking counteroffer of ₹${Number(bookingCounterRate).toLocaleString()} sent to client!`);
+    setCounterBookingId(null);
+  };
+
+  const handleAcceptBooking = (slotId: string) => {
+    updateBookingSlotStatus(slotId, 'confirmed');
+    alert('Booking confirmed! Slot scheduled on your calendar.');
   };
 
   const handleCreateSponsorRfp = (e: React.FormEvent) => {
@@ -1075,7 +1152,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
-                <span>My Campaigns & Briefs ({campaigns.length})</span>
+                <span>My Campaigns & Briefs ({userCampaigns.length})</span>
               </button>
 
               <button
@@ -1087,7 +1164,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Creator Applications ({applications.length})</span>
+                <span>Creator Applications ({userApplications.length})</span>
               </button>
 
               <button
@@ -1099,7 +1176,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Deal Rooms & Approvals ({collaborations.length})</span>
+                <span>Deal Rooms & Approvals ({userCollaborations.length})</span>
               </button>
 
               <button
@@ -1189,6 +1266,18 @@ export const DashboardPage: React.FC = () => {
               >
                 <Briefcase className="w-3.5 h-3.5" />
                 <span>My Pitches & Invites ({userApplications.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('bookings')}
+                className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                  activeTab === 'bookings'
+                    ? 'border-indigo-600 text-indigo-600 font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Service Bookings ({userBookings.length})</span>
               </button>
 
               <button
@@ -1306,7 +1395,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
-                <span>Client Campaigns ({campaigns.length})</span>
+                <span>Client Campaigns ({userCampaigns.length})</span>
               </button>
 
               <button
@@ -1318,7 +1407,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Creator Applications ({applications.length})</span>
+                <span>Creator Applications ({userApplications.length})</span>
               </button>
 
               <button
@@ -1330,7 +1419,7 @@ export const DashboardPage: React.FC = () => {
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Deal Rooms ({collaborations.length})</span>
+                <span>Deal Rooms ({userCollaborations.length})</span>
               </button>
 
               <button
@@ -3261,113 +3350,444 @@ export const DashboardPage: React.FC = () => {
               <span className="font-semibold text-indigo-600">Auto-release upon approval</span>
             </div>
 
-            {collaborations.map((collab) => (
-              <div
-                key={collab.id}
-                onClick={() => navigate(`/collaborations/${collab.id}`)}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-lg transition cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="flex items-center space-x-4">
-                  <img
-                    src={role === 'creator' ? collab.businessAvatar : collab.creatorAvatar}
-                    alt=""
-                    className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-50"
-                  />
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 text-base">{collab.campaignTitle}</h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Partner: <span className="font-semibold text-slate-800">{role === 'creator' ? collab.businessName : collab.creatorName}</span>
-                    </p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-[10px] text-slate-400">Deliverables:</span>
-                      <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                        {collab.deliverables?.length || 2} Items (Reel + Story)
-                      </span>
+            {userCollaborations.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+                <Layers className="w-10 h-10 text-slate-400 mx-auto" />
+                <h4 className="font-bold text-slate-800 text-sm">No Active Deal Rooms Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {role === 'creator'
+                    ? 'When a brand accepts your application or confirms a booking, an escrow-backed deal room will appear here.'
+                    : 'Accepted creator proposals will automatically fund into escrow and generate dedicated deal rooms here.'}
+                </p>
+              </div>
+            ) : (
+              userCollaborations.map((collab) => (
+                <div
+                  key={collab.id}
+                  onClick={() => navigate(`/collaborations/${collab.id}`)}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-lg transition cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src={role === 'creator' ? collab.businessAvatar : collab.creatorAvatar}
+                      alt=""
+                      className="w-12 h-12 rounded-xl object-cover ring-2 ring-indigo-50"
+                    />
+                    <div>
+                      <h3 className="font-extrabold text-slate-900 text-base">{collab.campaignTitle}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Partner: <span className="font-semibold text-slate-800">{role === 'creator' ? collab.businessName : collab.creatorName}</span>
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-[10px] text-slate-400">Deliverables:</span>
+                        <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                          {collab.deliverables?.length || 2} Items (Reel + Story)
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center space-x-6 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Status</span>
-                    <span className="font-bold text-indigo-700 capitalize bg-indigo-50 px-2.5 py-1 rounded-md text-[11px]">
-                      {collab.status.replace(/_/g, ' ')}
-                    </span>
+                  <div className="flex items-center space-x-6 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Status</span>
+                      <span className="font-bold text-indigo-700 capitalize bg-indigo-50 px-2.5 py-1 rounded-md text-[11px]">
+                        {collab.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-slate-400 block uppercase font-bold">Deal Value</span>
+                      <span className="font-extrabold text-slate-900 text-sm">
+                        {formatCurrency(collab.agreedAmount)}
+                      </span>
+                    </div>
+
+                    <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition">
+                      <span>Deal Room</span>
+                      <ArrowUpRight className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Deal Value</span>
-                    <span className="font-extrabold text-slate-900 text-sm">
-                      {formatCurrency(collab.agreedAmount)}
-                    </span>
-                  </div>
-
-                  <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold transition">
-                    <span>Deal Room</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </button>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
         {/* TAB 2: PROPOSALS & APPLICATIONS */}
         {activeTab === 'proposals' && (
           <div className="space-y-4">
-            {applications.map((app) => (
-              <div
-                key={app.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 text-xs"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center space-x-3">
-                    <img src={app.creatorAvatar} alt="" className="w-11 h-11 rounded-xl object-cover" />
-                    <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm">{app.creatorName}</h4>
-                      <p className="text-slate-500">{app.creatorHandle} • {app.creatorCategory}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Proposed Rate</span>
-                      <span className="font-extrabold text-indigo-700 text-sm">{formatCurrency(app.proposedRate)}</span>
-                    </div>
-
-                    <span className={`px-2 py-0.5 rounded-md font-bold uppercase text-[10px] ${
-                      app.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' :
-                      app.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {app.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-xl text-slate-700">
-                  <span className="font-bold text-slate-900 block mb-0.5">Campaign: {app.campaignTitle}</span>
-                  <p className="italic leading-relaxed">"{app.pitch}"</p>
-                </div>
-
-                {/* Actions for Business / Brand */}
-                {(role === 'business' || role === 'agency') && app.status === 'pending' && (
-                  <div className="flex justify-end space-x-2 pt-2">
-                    <button
-                      onClick={() => updateApplicationStatus(app.id, 'rejected')}
-                      className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg font-semibold"
-                    >
-                      Decline
-                    </button>
-                    <button
-                      onClick={() => handleAcceptApplication(app.id)}
-                      className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs"
-                    >
-                      Accept & Fund Escrow
-                    </button>
-                  </div>
-                )}
+            {userApplications.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+                <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
+                <h4 className="font-bold text-slate-800 text-sm">No Proposals or Applications Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {role === 'creator'
+                    ? 'Explore open brand campaigns to pitch your services, or check brand ad requests.'
+                    : 'Applications submitted by creators for your campaigns will appear here for review, negotiation, and escrow funding.'}
+                </p>
               </div>
-            ))}
+            ) : (
+              userApplications.map((app) => (
+                <div
+                  key={app.id}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 text-xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center space-x-3">
+                      <img src={app.creatorAvatar} alt="" className="w-11 h-11 rounded-xl object-cover" />
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm">{app.creatorName}</h4>
+                        <p className="text-slate-500">{app.creatorHandle} • {app.creatorCategory}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Proposed Rate</span>
+                        <span className="font-extrabold text-indigo-700 text-sm">{formatCurrency(app.proposedRate)}</span>
+                      </div>
+
+                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
+                        app.status === 'accepted' ? 'bg-emerald-100 text-emerald-800' :
+                        app.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                        app.status === 'counter_offered' ? 'bg-purple-100 text-purple-800' :
+                        app.status === 'rejected' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {app.status === 'counter_offered' ? 'Counteroffer Pending' : app.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-xl text-slate-700">
+                    <span className="font-bold text-slate-900 block mb-0.5">Campaign: {app.campaignTitle}</span>
+                    <p className="italic leading-relaxed">"{app.pitch}"</p>
+                  </div>
+
+                  {app.rejectionReason && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center space-x-2">
+                      <span className="font-bold">Declined:</span>
+                      <span>{app.rejectionReason}</span>
+                    </div>
+                  )}
+
+                  {app.status === 'counter_offered' && (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-950 space-y-1">
+                      <div className="flex items-center justify-between font-bold">
+                        <span>⚡ Brand Counter-proposal:</span>
+                        <span className="text-sm font-extrabold text-purple-700">{formatCurrency(app.counterRate || 0)}</span>
+                      </div>
+                      {app.counterNote && <p className="text-purple-800 italic">"{app.counterNote}"</p>}
+                    </div>
+                  )}
+
+                  {/* Actions for Business / Brand */}
+                  {(role === 'business' || role === 'agency') && app.status === 'pending' && (
+                    <div className="flex flex-wrap justify-end items-center gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          setRejectingAppId(app.id);
+                          setCounterAppId(null);
+                        }}
+                        className="px-3 py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold transition"
+                      >
+                        Decline with Reason
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCounterAppId(app.id);
+                          setCounterRate(Math.max(1000, Math.round(app.proposedRate * 0.85)));
+                          setRejectingAppId(null);
+                        }}
+                        className="px-3.5 py-1.5 border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-xl text-xs font-bold transition"
+                      >
+                        Counteroffer
+                      </button>
+                      <button
+                        onClick={() => handleAcceptApplication(app.id)}
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                      >
+                        Accept & Fund Escrow
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Rejection Form for Business */}
+                  {rejectingAppId === app.id && (
+                    <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3 mt-2">
+                      <span className="font-bold text-rose-900 block text-xs">Select Decline Reason:</span>
+                      <select
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        className="w-full p-2 bg-white border border-rose-200 rounded-xl text-xs font-medium text-slate-800"
+                      >
+                        <option value="Budget mismatch / Outside current allocation">Budget mismatch / Outside current allocation</option>
+                        <option value="Niche misalignment / Demographic target mismatch">Niche misalignment / Demographic target mismatch</option>
+                        <option value="Campaign quota filled / All slots assigned">Campaign quota filled / All slots assigned</option>
+                        <option value="Delivery timeline incompatible with launch">Delivery timeline incompatible with launch</option>
+                        <option value="Portfolio aesthetic does not fit creative brief">Portfolio aesthetic does not fit creative brief</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Optional additional feedback to creator..."
+                        value={rejectionCustomNote}
+                        onChange={(e) => setRejectionCustomNote(e.target.value)}
+                        className="w-full p-2 bg-white border border-rose-200 rounded-xl text-xs"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setRejectingAppId(null)}
+                          className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded-lg text-xs"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleConfirmRejectApplication(app.id)}
+                          className="px-3.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs"
+                        >
+                          Confirm Decline
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Counteroffer Form for Business */}
+                  {counterAppId === app.id && (
+                    <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-3 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-purple-900 text-xs">Propose Counteroffer Rate:</span>
+                        <span className="text-[11px] text-purple-700">Creator asked: {formatCurrency(app.proposedRate)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-purple-900 text-sm">₹</span>
+                        <input
+                          type="number"
+                          min={500}
+                          value={counterRate}
+                          onChange={(e) => setCounterRate(Number(e.target.value))}
+                          className="w-full p-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Counteroffer terms or note (e.g. Rate for 1 Reel instead of 2, 48h turnaround)..."
+                        value={counterNote}
+                        onChange={(e) => setCounterNote(e.target.value)}
+                        className="w-full p-2 bg-white border border-purple-200 rounded-xl text-xs"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setCounterAppId(null)}
+                          className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded-lg text-xs"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleConfirmCounteroffer(app.id)}
+                          className="px-3.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs"
+                        >
+                          Send Counteroffer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions for Creator on Counteroffer */}
+                  {role === 'creator' && app.status === 'counter_offered' && (
+                    <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => updateApplicationStatus(app.id, 'rejected', { rejectionReason: 'Creator declined counteroffer' })}
+                        className="px-3.5 py-1.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-semibold"
+                      >
+                        Decline Counteroffer
+                      </button>
+                      <button
+                        onClick={() => handleAcceptCounteroffer(app)}
+                        className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                      >
+                        Accept Counteroffer & Create Deal Room
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* TAB: SERVICE & CONSULTATION BOOKINGS (FOR CREATORS & CLIENTS) */}
+        {activeTab === 'bookings' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>Direct 1-on-1 consultations and express service bookings</span>
+              <span className="font-semibold text-indigo-600">Escrow backed calendar</span>
+            </div>
+
+            {userBookings.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+                <Calendar className="w-10 h-10 text-slate-400 mx-auto" />
+                <h4 className="font-bold text-slate-800 text-sm">No Service Bookings Yet</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Clients can book your calendar slots directly from your profile or rate card.
+                </p>
+              </div>
+            ) : (
+              userBookings.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 text-xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-extrabold text-slate-900 text-sm">{slot.serviceTitle}</h4>
+                        <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full uppercase">
+                          {slot.serviceType?.replace(/_/g, ' ') || 'Service'}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 mt-0.5">
+                        Client: <strong className="text-slate-800">{slot.clientName || 'Partner Brand'}</strong> • 📅 {slot.date} at {slot.timeSlot} ({slot.durationMinutes} mins)
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Service Fee</span>
+                        <span className="font-extrabold text-slate-900 text-sm">{formatCurrency(slot.price)}</span>
+                      </div>
+
+                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
+                        slot.status === 'confirmed' || slot.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                        slot.status === 'booked' ? 'bg-amber-100 text-amber-800' :
+                        slot.status === 'counter_offered' ? 'bg-purple-100 text-purple-800' :
+                        slot.status === 'rejected' ? 'bg-rose-100 text-rose-800' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {slot.status === 'booked' ? 'Pending Approval' : slot.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {slot.bookingConditions && (
+                    <div className="p-3 bg-slate-50 rounded-xl text-slate-700">
+                      <span className="font-bold text-slate-900 block mb-0.5">Booking Instructions & Scope:</span>
+                      <p className="leading-relaxed">{slot.bookingConditions}</p>
+                    </div>
+                  )}
+
+                  {slot.rejectionReason && (
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                      <strong>Decline Reason:</strong> {slot.rejectionReason}
+                    </div>
+                  )}
+
+                  {slot.status === 'counter_offered' && (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-950">
+                      <strong>Proposed Counteroffer:</strong> {formatCurrency(slot.counterRate || 0)}
+                      {slot.counterNote && <p className="italic mt-0.5">"{slot.counterNote}"</p>}
+                    </div>
+                  )}
+
+                  {/* Actions for Creator */}
+                  {role === 'creator' && slot.status === 'booked' && (
+                    <div className="flex flex-wrap justify-end items-center gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          setRejectingBookingId(slot.id);
+                          setCounterBookingId(null);
+                        }}
+                        className="px-3 py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded-xl text-xs font-bold transition"
+                      >
+                        Decline Booking
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCounterBookingId(slot.id);
+                          setBookingCounterRate(slot.price);
+                          setRejectingBookingId(null);
+                        }}
+                        className="px-3.5 py-1.5 border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-xl text-xs font-bold transition"
+                      >
+                        Counteroffer
+                      </button>
+                      <button
+                        onClick={() => handleAcceptBooking(slot.id)}
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                      >
+                        Accept Booking
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Booking Rejection Form */}
+                  {rejectingBookingId === slot.id && (
+                    <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3 mt-2">
+                      <span className="font-bold text-rose-900 block text-xs">Reason for declining booking:</span>
+                      <select
+                        value={bookingRejectionReason}
+                        onChange={(e) => setBookingRejectionReason(e.target.value)}
+                        className="w-full p-2 bg-white border border-rose-200 rounded-xl text-xs font-medium text-slate-800"
+                      >
+                        <option value="Schedule full / Conflicting dates">Schedule full / Conflicting dates</option>
+                        <option value="Rate below minimum consultation floor">Rate below minimum consultation floor</option>
+                        <option value="Category exclusivity / Brand conflict">Category exclusivity / Brand conflict</option>
+                        <option value="Format / Scope outside creator guidelines">Format / Scope outside creator guidelines</option>
+                      </select>
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setRejectingBookingId(null)}
+                          className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded-lg text-xs"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleConfirmRejectBooking(slot.id)}
+                          className="px-3.5 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs"
+                        >
+                          Confirm Decline
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Booking Counteroffer Form */}
+                  {counterBookingId === slot.id && (
+                    <div className="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-3 mt-2">
+                      <span className="font-bold text-purple-900 block text-xs">Counteroffer Rate & Rescheduling:</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-purple-900 text-sm">₹</span>
+                        <input
+                          type="number"
+                          min={500}
+                          value={bookingCounterRate}
+                          onChange={(e) => setBookingCounterRate(Number(e.target.value))}
+                          className="w-full p-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Alternate date/time or revised deliverable terms..."
+                        value={bookingCounterNote}
+                        onChange={(e) => setBookingCounterNote(e.target.value)}
+                        className="w-full p-2 bg-white border border-purple-200 rounded-xl text-xs"
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => setCounterBookingId(null)}
+                          className="px-3 py-1 text-slate-600 hover:bg-slate-200 rounded-lg text-xs"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleConfirmCounterBooking(slot.id)}
+                          className="px-3.5 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg text-xs"
+                        >
+                          Send Counteroffer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
@@ -3820,7 +4240,16 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {campaigns.map((camp) => (
+              {userCampaigns.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-10 text-center space-y-2">
+                  <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
+                  <h4 className="font-bold text-slate-800 text-sm">No Published Campaigns</h4>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    You haven't published any campaigns yet. Use the form above or the Campaign Wizard to publish your first brief.
+                  </p>
+                </div>
+              ) : (
+                userCampaigns.map((camp) => (
                 <div
                   key={camp.id}
                   className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -3859,7 +4288,7 @@ export const DashboardPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         )}

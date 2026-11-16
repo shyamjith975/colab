@@ -59,16 +59,10 @@ export const CampaignsPage: React.FC = () => {
     });
   }, [campaigns, selectedCategory, selectedPlatform, searchQuery, minBudget]);
 
-  const handleOpenApply = (camp: Campaign, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isLoggedIn) {
-      setShowLoginModal(true);
-      return;
-    }
+  const handleOpenDetails = (camp: Campaign, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setActiveCampaign(camp);
-    setProposedRate(camp.budget.minAmount);
-    setPitch('');
-    setShowApplyModal(true);
+    setShowApplyModal(false);
   };
 
   const handleSubmitApplication = (e: React.FormEvent) => {
@@ -95,6 +89,7 @@ export const CampaignsPage: React.FC = () => {
 
     alert(`Application submitted successfully for "${activeCampaign.title}"! You will be notified in your Deal Room when the brand reviews your proposal.`);
     setShowApplyModal(false);
+    setActiveCampaign(null);
   };
 
   return (
@@ -241,10 +236,10 @@ export const CampaignsPage: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={(e) => handleOpenApply(camp, e)}
+                  onClick={(e) => handleOpenDetails(camp, e)}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition shadow-xs"
                 >
-                  Apply Now
+                  View Brief & Apply
                 </button>
               </div>
             </div>
@@ -318,10 +313,18 @@ export const CampaignsPage: React.FC = () => {
                   Close
                 </button>
                 <button
-                  onClick={() => setShowApplyModal(true)}
+                  onClick={() => {
+                    if (!isLoggedIn) {
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    setProposedRate(activeCampaign.budget.minAmount);
+                    setPitch('');
+                    setShowApplyModal(true);
+                  }}
                   className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition"
                 >
-                  Apply to this Campaign
+                  Proceed to Submit Proposal →
                 </button>
               </div>
             </div>
@@ -334,6 +337,13 @@ export const CampaignsPage: React.FC = () => {
             <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowApplyModal(false)}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold mb-1 flex items-center space-x-1"
+                  >
+                    <span>← Back to Campaign Brief</span>
+                  </button>
                   <h3 className="text-lg font-bold text-slate-900">
                     Apply: {activeCampaign.title}
                   </h3>
@@ -342,7 +352,10 @@ export const CampaignsPage: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowApplyModal(false)}
+                  onClick={() => {
+                    setShowApplyModal(false);
+                    setActiveCampaign(null);
+                  }}
                   className="p-1.5 rounded-xl hover:bg-slate-100"
                 >
                   <X className="w-5 h-5 text-slate-500" />
@@ -428,7 +441,10 @@ export const CampaignsPage: React.FC = () => {
                 <div className="pt-2 flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setShowApplyModal(false)}
+                    onClick={() => {
+                      setShowApplyModal(false);
+                      setActiveCampaign(null);
+                    }}
                     className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
                   >
                     Cancel
@@ -437,7 +453,7 @@ export const CampaignsPage: React.FC = () => {
                     type="submit"
                     className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition"
                   >
-                    Submit Application
+                    Submit Proposal
                   </button>
                 </div>
               </form>

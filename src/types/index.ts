@@ -165,7 +165,12 @@ export interface CampaignApplication {
   pitch: string;
   portfolioLinks: string[];
   answers?: { question: string; answer: string }[];
-  status: 'pending' | 'shortlisted' | 'accepted' | 'rejected' | 'withdrawn';
+  status: 'pending' | 'shortlisted' | 'accepted' | 'rejected' | 'withdrawn' | 'counter_offered';
+  rejectionReason?: string;
+  counterRate?: number;
+  counterNote?: string;
+  businessId?: string;
+  businessName?: string;
   appliedAt: string;
 }
 
@@ -414,10 +419,15 @@ export interface BookingSlot {
   durationMinutes: number;
   price: number;
   clientName?: string;
-  status: 'available' | 'booked' | 'completed';
+  clientId?: string;
+  clientAvatar?: string;
+  status: 'available' | 'booked' | 'confirmed' | 'rejected' | 'completed' | 'counter_offered';
   bookingConditions?: string;
   serviceLocation?: string;
   instantBookable?: boolean;
+  rejectionReason?: string;
+  counterRate?: number;
+  counterNote?: string;
 }
 
 export interface LocalAdChannel {

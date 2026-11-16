@@ -149,6 +149,19 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(app)
       }, app as CampaignApplication);
+    },
+
+    async updateStatus(
+      applicationId: string,
+      status: string,
+      rejectionReason?: string,
+      counterRate?: number,
+      counterNote?: string
+    ): Promise<CampaignApplication | null> {
+      return fetchJson<CampaignApplication | null>('/campaign-applications/status', {
+        method: 'POST',
+        body: JSON.stringify({ applicationId, status, rejectionReason, counterRate, counterNote })
+      }, null);
     }
   },
 
@@ -190,6 +203,19 @@ export const api = {
       return fetchJson<BookingSlot | null>('/booking-slots/book', {
         method: 'POST',
         body: JSON.stringify({ slotId, clientName })
+      }, null);
+    },
+
+    async updateStatus(
+      slotId: string,
+      status: string,
+      rejectionReason?: string,
+      counterRate?: number,
+      counterNote?: string
+    ): Promise<BookingSlot | null> {
+      return fetchJson<BookingSlot | null>('/booking-slots/status', {
+        method: 'POST',
+        body: JSON.stringify({ slotId, status, rejectionReason, counterRate, counterNote })
       }, null);
     }
   },

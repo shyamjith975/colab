@@ -82,7 +82,16 @@ interface AppContextType {
   bookCreatorCollective: (collectiveId: string, businessNote: string) => Collaboration;
   createCampaign: (campaign: Omit<Campaign, 'id' | 'businessId' | 'businessName' | 'businessLogo' | 'businessVerified' | 'applicantsCount' | 'shortlistedCount' | 'createdAt'>) => Campaign;
   applyToCampaign: (application: Omit<CampaignApplication, 'id' | 'appliedAt' | 'status'>) => void;
-  updateApplicationStatus: (applicationId: string, status: CampaignApplication['status']) => void;
+  updateApplicationStatus: (
+    applicationId: string,
+    status: CampaignApplication['status'],
+    meta?: { rejectionReason?: string; counterRate?: number; counterNote?: string }
+  ) => void;
+  updateBookingSlotStatus: (
+    slotId: string,
+    status: BookingSlot['status'],
+    meta?: { rejectionReason?: string; counterRate?: number; counterNote?: string }
+  ) => void;
   createCollaborationFromApplication: (applicationId: string) => Collaboration;
   updateCollaborationDeliverable: (collabId: string, deliverableId: string, submissionUrl: string) => void;
   requestDeliverableRevision: (collabId: string, deliverableId: string, feedback: string) => void;
@@ -520,8 +529,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCampaigns(prev => prev.map(c => c.id === applicationData.campaignId ? { ...c, applicantsCount: c.applicantsCount + 1 } : c));
   };
 
-  const updateApplicationStatus = (applicationId: string, status: CampaignApplication['status']) => {
-    setApplications(prev => prev.map(a => a.id === applicationId ? { ...a, status } : a));
+  const updateApplicationStatus = (
+    applicationId: string,
+    status: CampaignApplication['status'],
+    meta?: { rejectionReason?: string; counterRate?: number; counterNote?: string }
+  ) => {
+    setApplications(prev => prev.map(a => a.id === applicationId ? { ...a, status, ...meta } : a));
+    api.applications.updateStatus(applicationId, status, meta?.rejectionReason, meta?.counterRate, meta?.counterNote).catch(() => {});
+  };
+
+  const updateBookingSlotStatus = (
+    slotId: string,
+    status: BookingSlot['status'],
+    meta?: { rejectionReason?: string; counterRate?: number; counterNote?: string }
+  ) => {
+    setBookingSlots(prev => prev.map(s => s.id === slotId ? { ...s, status, ...meta } : s));
+    api.bookingSlots.updateStatus(slotId, status, meta?.rejectionReason, meta?.counterRate, meta?.counterNote).catch(() => {});
   };
 
   const createCollaborationFromApplication = (applicationId: string): Collaboration => {
@@ -1492,6 +1515,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createCampaign,
         applyToCampaign,
         updateApplicationStatus,
+        updateBookingSlotStatus,
         createCollaborationFromApplication,
         updateCollaborationDeliverable,
         requestDeliverableRevision,
