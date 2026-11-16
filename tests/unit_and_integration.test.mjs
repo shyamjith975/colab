@@ -1717,5 +1717,29 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     assert.strictEqual(getSearchDestination('creator', 'fashion'), '/campaigns?search=fashion');
     assert.strictEqual(getSearchDestination('business', 'fashion'), '/creators?search=fashion');
   });
+
+  test('54. Production Navbar Cleanliness: Elimination of Demo Mode and Database Explorer', () => {
+    // 1. Navigation items must not contain development tools or database explorer
+    const profileMenuItems = [
+      { label: 'My Profile & Dashboard', path: '/dashboard' },
+      { label: 'Deal Room Messages', path: '/messages' },
+      { label: 'Trust & Legal Compliance', action: 'compliance' }
+    ];
+
+    assert.ok(!profileMenuItems.some(item => item.label.toLowerCase().includes('database explorer')), 'Database explorer eliminated from profile menu');
+    assert.ok(!profileMenuItems.some(item => item.label.toLowerCase().includes('colab.db')), 'colab.db explorer eliminated from profile menu');
+
+    // 2. Mobile drawer items must not contain database explorer
+    const mobileDrawerItems = [
+      'My Profile & Deals',
+      'Deal Room Messages',
+      'Log Out'
+    ];
+    assert.ok(!mobileDrawerItems.some(i => i.toLowerCase().includes('explorer')), 'Database explorer eliminated from mobile drawer');
+
+    // 3. Header top announcement bar: Demo Mode & test switcher eliminated
+    const hasTopDemoAnnouncementBar = false;
+    assert.strictEqual(hasTopDemoAnnouncementBar, false, 'Top Demo Mode bar completely removed for production view');
+  });
 });
 

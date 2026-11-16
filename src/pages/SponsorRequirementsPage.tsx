@@ -19,7 +19,8 @@ import {
   Layers,
   ChevronRight,
   Send,
-  Sliders
+  Sliders,
+  X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatCompactNumber, formatDate } from '../utils';
@@ -63,6 +64,60 @@ export const SponsorRequirementsPage: React.FC = () => {
   );
 
   const [publishedNotice, setPublishedNotice] = useState<string | null>(null);
+
+  // Detailed Modal First -> Pitch Modal Second State
+  const [selectedDetailRfp, setSelectedDetailRfp] = useState<SponsorRequirementRFP | null>(null);
+  const [selectedPitchRfp, setSelectedPitchRfp] = useState<SponsorRequirementRFP | null>(null);
+  const [pitchForm, setPitchForm] = useState({
+    eventName: '',
+    eventDate: '2026-12-20',
+    venueCity: 'Bengaluru',
+    expectedFootfall: 5000,
+    requestedAmount: 150000,
+    deckUrl: '',
+    pitchNote: ''
+  });
+  const [pitchSubmittedNotice, setPitchSubmittedNotice] = useState<string | null>(null);
+
+  const handleOpenDetail = (rfp: SponsorRequirementRFP) => {
+    setSelectedDetailRfp(rfp);
+    setSelectedPitchRfp(null);
+  };
+
+  const handleProceedToPitch = (rfp: SponsorRequirementRFP) => {
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+    setSelectedDetailRfp(null);
+    setSelectedPitchRfp(rfp);
+    setPitchForm({
+      eventName: '',
+      eventDate: '2026-12-20',
+      venueCity: rfp.targetLocations[0] || 'Bengaluru',
+      expectedFootfall: rfp.minFootfall,
+      requestedAmount: Math.round((rfp.budgetMin + rfp.budgetMax) / 2),
+      deckUrl: '',
+      pitchNote: ''
+    });
+  };
+
+  const handleClosePitch = () => {
+    setSelectedPitchRfp(null);
+    setSelectedDetailRfp(null);
+  };
+
+  const handleSubmitPitch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pitchForm.eventName.trim()) {
+      alert('Please enter your event name.');
+      return;
+    }
+    setPitchSubmittedNotice(`Official sponsorship proposal for "${pitchForm.eventName}" submitted to ${selectedPitchRfp?.sponsorName}!`);
+    setSelectedPitchRfp(null);
+    setSelectedDetailRfp(null);
+    setTimeout(() => setPitchSubmittedNotice(null), 7000);
+  };
 
   const availableEventTypes = [
     'College Cultural Fest',
@@ -388,11 +443,19 @@ export const SponsorRequirementsPage: React.FC = () => {
               </span>
             </div>
 
+            {pitchSubmittedNotice && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 flex items-center space-x-3 text-xs font-semibold shadow-xs">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>{pitchSubmittedNotice}</span>
+              </div>
+            )}
+
             <div className="space-y-4">
               {sponsorRfps.map((rfp) => (
                 <div
                   key={rfp.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition space-y-3"
+                  onClick={() => handleOpenDetail(rfp)}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition space-y-3 cursor-pointer group hover:border-amber-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
@@ -408,7 +471,7 @@ export const SponsorRequirementsPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <h5 className="font-extrabold text-slate-900 text-sm leading-snug">{rfp.title}</h5>
+                    <h5 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-amber-800 transition">{rfp.title}</h5>
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{rfp.brief}</p>
                   </div>
 
@@ -439,11 +502,15 @@ export const SponsorRequirementsPage: React.FC = () => {
                       {rfp.proposalsCount} Proposals Received
                     </span>
                     <button
-                      onClick={() => alert(`Pitch submitted for "${rfp.title}"! The brand sponsor team has been notified.`)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDetail(rfp);
+                      }}
                       className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1"
                     >
-                      <Send className="w-3 h-3" />
-                      <span>Submit Event Pitch</span>
+                      <span>View Brief & Pitch</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -452,6 +519,233 @@ export const SponsorRequirementsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 1. DETAILED RFP BRIEF MODAL (OPENS FIRST) */}
+      {selectedDetailRfp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-gradient-to-r from-amber-50 to-orange-50/40">
+              <div className="flex items-center space-x-3">
+                <img
+                  src={selectedDetailRfp.sponsorLogo}
+                  alt=""
+                  className="w-14 h-14 rounded-2xl object-cover ring-2 ring-amber-200 shadow-xs"
+                />
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-200/60 text-amber-900 px-2 py-0.5 rounded-full">
+                      {selectedDetailRfp.brandIndustry}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full uppercase">
+                      {selectedDetailRfp.status}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900 mt-1">{selectedDetailRfp.title}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Sponsor: {selectedDetailRfp.sponsorName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDetailRfp(null)}
+                className="p-1.5 rounded-xl hover:bg-white text-slate-400 hover:text-slate-700 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  Full Sponsorship Requirement Brief
+                </h4>
+                <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  {selectedDetailRfp.brief}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="bg-amber-50/80 p-3.5 rounded-2xl border border-amber-200">
+                  <span className="text-[10px] text-amber-800 uppercase font-bold block">Sponsorship Budget</span>
+                  <span className="text-sm font-black text-amber-950 block mt-0.5">
+                    {formatCurrency(selectedDetailRfp.budgetMin)} - {formatCurrency(selectedDetailRfp.budgetMax)}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Min Audience Footfall</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5">
+                    {formatCompactNumber(selectedDetailRfp.minFootfall)}+ Attendees
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 col-span-2 sm:col-span-1">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Proposals Received</span>
+                  <span className="text-sm font-bold text-slate-900 block mt-0.5">
+                    {selectedDetailRfp.proposalsCount} proposals
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Target Cities & Locations
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedDetailRfp.targetLocations.map((loc) => (
+                    <span key={loc} className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
+                      📍 {loc}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Required Stage Deliverables & Perks
+                </h4>
+                <div className="space-y-1.5">
+                  {selectedDetailRfp.requiredPerks.map((perk, i) => (
+                    <div key={i} className="flex items-center space-x-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{perk}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setSelectedDetailRfp(null)}
+                className="px-4 py-2 text-slate-600 hover:text-slate-900 text-xs font-bold"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => handleProceedToPitch(selectedDetailRfp)}
+                className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md shadow-amber-200"
+              >
+                <span>Proceed to Submit Proposal</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. PITCH SUBMISSION FORM MODAL (OPENS AFTER EXPLICIT PROCEED) */}
+      {selectedPitchRfp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+              <div>
+                <h3 className="font-extrabold text-sm text-white">Submit Event Sponsorship Proposal</h3>
+                <p className="text-[11px] text-slate-400">Target Sponsor: {selectedPitchRfp.sponsorName}</p>
+              </div>
+              <button
+                onClick={handleClosePitch}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitPitch} className="p-6 space-y-4 overflow-y-auto flex-1">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">College Festival / Event Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dhwani 2026 / TechFest Annual"
+                  value={pitchForm.eventName}
+                  onChange={(e) => setPitchForm({ ...pitchForm, eventName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Event Date</label>
+                  <input
+                    type="date"
+                    value={pitchForm.eventDate}
+                    onChange={(e) => setPitchForm({ ...pitchForm, eventDate: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Venue City</label>
+                  <input
+                    type="text"
+                    value={pitchForm.venueCity}
+                    onChange={(e) => setPitchForm({ ...pitchForm, venueCity: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Expected Footfall</label>
+                  <input
+                    type="number"
+                    value={pitchForm.expectedFootfall}
+                    onChange={(e) => setPitchForm({ ...pitchForm, expectedFootfall: Number(e.target.value) })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Requested Sponsorship (₹)</label>
+                  <input
+                    type="number"
+                    value={pitchForm.requestedAmount}
+                    onChange={(e) => setPitchForm({ ...pitchForm, requestedAmount: Number(e.target.value) })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Pitch Deck / Brochure Link</label>
+                <input
+                  type="url"
+                  placeholder="https://drive.google.com/..."
+                  value={pitchForm.deckUrl}
+                  onChange={(e) => setPitchForm({ ...pitchForm, deckUrl: e.target.value })}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Custom Note / Tailored Perks</label>
+                <textarea
+                  rows={2}
+                  placeholder="Tell the brand how your crowd matches their target demographic..."
+                  value={pitchForm.pitchNote}
+                  onChange={(e) => setPitchForm({ ...pitchForm, pitchNote: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={handleClosePitch}
+                  className="px-4 py-2 text-slate-600 hover:text-slate-900 text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Submit Event Proposal</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

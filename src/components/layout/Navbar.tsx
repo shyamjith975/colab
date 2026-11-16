@@ -12,12 +12,9 @@ import {
   LogOut,
   LogIn,
   Sparkles,
-  ArrowRight,
-  Database
+  ArrowRight
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { UserRole } from '../../types';
-import { DatabaseExplorerModal } from '../database/DatabaseExplorerModal';
 
 export const Navbar: React.FC = () => {
   const {
@@ -25,24 +22,18 @@ export const Navbar: React.FC = () => {
     isLoggedIn,
     logout,
     setShowLoginModal,
-    switchRole,
-    switchUser,
-    users,
     searchQuery,
     setSearchQuery,
     openComplianceModal
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [showDbExplorer, setShowDbExplorer] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const roleDropdownRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking anywhere outside
@@ -53,12 +44,6 @@ export const Navbar: React.FC = () => {
         !profileMenuRef.current.contains(event.target as Node)
       ) {
         setProfileDropdownOpen(false);
-      }
-      if (
-        roleDropdownRef.current &&
-        !roleDropdownRef.current.contains(event.target as Node)
-      ) {
-        setRoleDropdownOpen(false);
       }
       if (
         moreMenuRef.current &&
@@ -79,7 +64,6 @@ export const Navbar: React.FC = () => {
   // Close menus when changing routes
   useEffect(() => {
     setProfileDropdownOpen(false);
-    setRoleDropdownOpen(false);
     setMobileMenuOpen(false);
     setMoreMenuOpen(false);
   }, [location.pathname]);
@@ -135,115 +119,10 @@ export const Navbar: React.FC = () => {
     { label: 'Pricing & Plans', path: '/pricing', icon: '💳' }
   ];
 
-  const roles: { role: UserRole; label: string; icon: string }[] = [
-    { role: 'creator', label: 'Creator View', icon: '🎨' },
-    { role: 'business', label: 'Brand / Business', icon: '🏢' },
-    { role: 'agency', label: 'Agency Client View', icon: '💼' },
-    { role: 'organiser', label: 'Event Organiser', icon: '🎪' },
-    { role: 'sponsor', label: 'Sponsor View', icon: '🤝' },
-    { role: 'admin', label: 'Admin Control Panel', icon: '⚡' }
-  ];
-
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white text-xs py-2 px-4 sm:px-6 lg:px-8 w-full overflow-hidden">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-2.5 min-w-0">
-            <span className="bg-indigo-500/40 text-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-              {isLoggedIn ? 'Demo Mode' : 'Guest Mode'}
-            </span>
-            <button
-              onClick={() => setShowDbExplorer(true)}
-              className="flex items-center space-x-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition cursor-pointer shrink-0"
-              title="Open Live colab.db SQLite Explorer & Query Test Runner"
-            >
-              <Database className="w-3 h-3 text-emerald-400" />
-              <span>colab.db (SQLite)</span>
-            </button>
-            <span className="hidden md:inline text-slate-200 text-xs truncate">
-              {isLoggedIn
-                ? 'Switch roles instantly to preview Creator, Brand, Deal Room, or Admin operations.'
-                : 'Browse as Guest • Log in to view full creator media kits, rate cards, and collaborate.'}
-            </span>
-          </div>
-
-          {/* Quick Role Switcher Pill or Login CTA */}
-          {isLoggedIn && currentUser ? (
-            <div className="relative shrink-0" ref={roleDropdownRef}>
-              <button
-                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs transition font-medium border border-white/20"
-              >
-                <span>Acting as:</span>
-                <span className="font-bold text-amber-300 capitalize">{currentUser.role}</span>
-                <span className="text-[11px]">({currentUser.name.split(' ')[0]})</span>
-                <ChevronDown className="w-3 h-3 text-slate-300" />
-              </button>
-
-              {roleDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40 bg-transparent"
-                    onClick={() => setRoleDropdownOpen(false)}
-                  />
-                  <div
-                    className="absolute right-0 mt-2 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
-                    onClick={() => setRoleDropdownOpen(false)}
-                  >
-                    <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                      Switch Active Role
-                    </div>
-                    {roles.map((r) => (
-                      <button
-                        key={r.role}
-                        onClick={() => switchRole(r.role)}
-                        className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-indigo-50 transition ${
-                          currentUser.role === r.role ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
-                        }`}
-                      >
-                        <span className="flex items-center space-x-2">
-                          <span>{r.icon}</span>
-                          <span>{r.label}</span>
-                        </span>
-                        {currentUser.role === r.role && (
-                          <span className="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold">Active</span>
-                        )}
-                      </button>
-                    ))}
-
-                    <div className="px-3.5 pt-2.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-t border-slate-100 mt-1">
-                      Preset Test Profiles
-                    </div>
-                    {users.slice(0, 4).map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => switchUser(u.id)}
-                        className="w-full text-left px-3.5 py-1.5 text-xs flex items-center space-x-2 hover:bg-slate-50 text-slate-600"
-                      >
-                        <img src={u.avatar} alt="" className="w-5 h-5 rounded-full object-cover" />
-                        <span className="truncate">{u.name}</span>
-                        <span className="text-[10px] text-slate-400 capitalize">({u.role})</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className="flex items-center space-x-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-3 py-1 rounded-full text-xs transition shadow-xs"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Log In to Account</span>
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Main Nav with clean responsive layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center justify-between h-16 sm:h-18 w-full gap-2 sm:gap-4">
@@ -513,17 +392,6 @@ export const Navbar: React.FC = () => {
                             <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
                             <span>Trust & Legal Compliance</span>
                           </button>
-
-                          <button
-                            onClick={() => {
-                              setShowDbExplorer(true);
-                              setProfileDropdownOpen(false);
-                            }}
-                            className="w-full flex items-center space-x-2.5 px-4 py-2 hover:bg-emerald-50 text-emerald-800 font-medium transition text-left cursor-pointer"
-                          >
-                            <Database className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span>Database Explorer (SQLite)</span>
-                          </button>
                         </div>
 
                         {/* Logout Action */}
@@ -679,17 +547,6 @@ export const Navbar: React.FC = () => {
               </>
             )}
 
-            <button
-              onClick={() => {
-                setShowDbExplorer(true);
-                setMobileMenuOpen(false);
-              }}
-              className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold text-emerald-700 hover:bg-emerald-50 flex items-center space-x-2"
-            >
-              <Database className="w-4 h-4 text-emerald-600" />
-              <span>colab.db SQLite Explorer</span>
-            </button>
-
             {!isLoggedIn && (
               <button
                 onClick={() => {
@@ -746,11 +603,6 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       )}
-      {/* Live SQLite Database Explorer & Query Runner Modal */}
-      <DatabaseExplorerModal
-        isOpen={showDbExplorer}
-        onClose={() => setShowDbExplorer(false)}
-      />
     </header>
   );
 };
