@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -20,9 +20,16 @@ import { CreatorProfile } from '../types';
 import { formatCurrency, formatCompactNumber } from '../utils';
 
 export const DiscoverCreatorsPage: React.FC = () => {
-  const { creators, settings, isLoggedIn, setShowLoginModal } = useApp();
+  const { creators, settings, isLoggedIn, setShowLoginModal, currentUser } = useApp();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Creators do not browse competitor creators; immediately redirect them to Open Brand Campaigns
+  useEffect(() => {
+    if (currentUser?.role === 'creator') {
+      navigate('/campaigns', { replace: true });
+    }
+  }, [currentUser?.role, navigate]);
 
   const handleViewProfile = (creatorId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -51,6 +58,11 @@ export const DiscoverCreatorsPage: React.FC = () => {
 
   const categories = ['All', ...settings.categories];
   const platforms = ['All', 'instagram', 'youtube', 'x', 'linkedin'];
+
+  // If creator, do not render creator directory
+  if (currentUser?.role === 'creator') {
+    return null;
+  }
 
   // Filter & sort logic
   const filteredCreators = useMemo(() => {

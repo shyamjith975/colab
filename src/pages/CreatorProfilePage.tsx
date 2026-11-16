@@ -50,9 +50,20 @@ export const CreatorProfilePage: React.FC = () => {
 
   const creator = creators.find((c) => c.id === id);
 
+  // Guard: Creators must not view competitor creators' listings, pricing or profiles
+  useEffect(() => {
+    if (currentUser?.role === 'creator' && id && currentUser.id !== id) {
+      navigate('/campaigns', { replace: true });
+    }
+  }, [currentUser, id, navigate]);
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [id]);
+
+  if (currentUser?.role === 'creator' && id && currentUser.id !== id) {
+    return null;
+  }
 
   const [activeTab, setActiveTab] = useState<'services' | 'portfolio' | 'demographics' | 'reviews'>('services');
   const [showInviteModal, setShowInviteModal] = useState(false);

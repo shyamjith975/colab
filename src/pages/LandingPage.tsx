@@ -25,17 +25,25 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency, formatCompactNumber } from '../utils';
 
 export const LandingPage: React.FC = () => {
-  const { creators, campaigns, switchRole, isLoggedIn, setShowLoginModal } = useApp();
+  const { creators, campaigns, switchRole, isLoggedIn, setShowLoginModal, currentUser } = useApp();
   const navigate = useNavigate();
   const [localSearch, setLocalSearch] = useState('');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (localSearch.trim()) {
-      navigate(`/creators?search=${encodeURIComponent(localSearch.trim())}`);
+    if (currentUser?.role === 'creator') {
+      if (localSearch.trim()) {
+        navigate(`/campaigns?search=${encodeURIComponent(localSearch.trim())}`);
+      } else {
+        navigate('/campaigns');
+      }
     } else {
-      navigate('/creators');
+      if (localSearch.trim()) {
+        navigate(`/creators?search=${encodeURIComponent(localSearch.trim())}`);
+      } else {
+        navigate('/creators');
+      }
     }
   };
 
@@ -109,7 +117,11 @@ export const LandingPage: React.FC = () => {
                 <Search className="w-5 h-5 text-slate-600 ml-3 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search creators (e.g. fashion in Mumbai, tech reviews, budget under ₹3,000)..."
+                  placeholder={
+                    currentUser?.role === 'creator'
+                      ? "Search brand advertising campaigns, sponsorships, RFPs..."
+                      : "Search creators (e.g. fashion in Mumbai, tech reviews, budget under ₹3,000)..."
+                  }
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
                   className="w-full px-3 py-2 text-sm text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
@@ -279,123 +291,125 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. FEATURED CREATORS */}
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1">
-              Top Talent
-            </h2>
-            <p className="text-3xl font-extrabold text-slate-900">
-              Featured Verified Creators
-            </p>
-          </div>
-          <Link
-            to="/creators"
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center space-x-1 mt-2 sm:mt-0"
-          >
-            <span>View all 20+ creators</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
-          {featuredCreators.map((creator) => (
-            <div
-              key={creator.id}
-              onClick={() => {
-                if (!isLoggedIn) {
-                  setShowLoginModal(true);
-                } else {
-                  navigate(`/creators/${creator.id}`);
-                }
-              }}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-200 cursor-pointer flex flex-col justify-between group"
-            >
-              <div>
-                {/* 1st image as background banner */}
-                <div className="h-36 sm:h-40 w-full relative bg-slate-100 overflow-hidden">
-                  <img
-                    src={creator.coverImage}
-                    alt=""
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-
-                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full z-10 shadow-xs">
-                    {creator.category}
-                  </div>
-                </div>
-
-                {/* Avatar & Info with Avatar in FRONT */}
-                <div className="px-5 pb-5 pt-0 flex-1 flex flex-col relative z-20">
-                  <div className="-mt-12 sm:-mt-14 mb-3.5 flex items-end justify-between relative z-30">
-                    <div className="relative">
-                      <img
-                        src={creator.avatar}
-                        alt={creator.name}
-                        className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-xl bg-white relative z-30"
-                      />
-                      {creator.verified && (
-                        <div className="absolute bottom-0 right-0 bg-indigo-600 text-white p-0.5 rounded-full ring-2 ring-white z-40" title="Verified Creator">
-                          <ShieldCheck className="w-3.5 h-3.5 text-white" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-1 bg-amber-50/90 backdrop-blur-xs text-amber-800 text-xs font-bold px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-xs relative z-30">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                      <span>{creator.rating.toFixed(1)}</span>
-                      <span className="text-slate-500 text-[10px]">({creator.reviewsCount})</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-1.5">
-                    <h3 className="font-bold text-slate-900 text-base truncate group-hover:text-indigo-600 transition">
-                      {creator.name}
-                    </h3>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-2">{creator.handle}</p>
-                  <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">
-                    {creator.bio}
-                  </p>
-
-                  {/* Social Metrics */}
-                  <div className="grid grid-cols-2 gap-2 py-2.5 px-3 bg-slate-50 rounded-xl mb-4 border border-slate-100 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-500 block uppercase font-semibold">Audience</span>
-                      <span className="font-bold text-slate-800">
-                        {formatCompactNumber(creator.socialAccounts[0]?.followersCount || 10000)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block uppercase font-semibold">Engagement</span>
-                      <span className="font-bold text-emerald-600">
-                        {creator.socialAccounts[0]?.engagementRate || 5.2}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Bottom CTA */}
-              <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">
-                    {isLoggedIn ? 'Starting from' : 'Indicative rate'}
-                  </span>
-                  <span className="font-extrabold text-indigo-700 text-sm">
-                    {formatCurrency(creator.minPrice)}
-                  </span>
-                </div>
-                <span className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl transition shadow-xs hover:shadow-indigo-200">
-                  {isLoggedIn ? 'View Media Kit →' : 'Log In to View 🔒'}
-                </span>
-              </div>
+      {/* 3. FEATURED CREATORS (HIDDEN FOR CREATORS - ONLY SHOWN TO BRANDS & VISITORS) */}
+      {currentUser?.role !== 'creator' && (
+        <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-600 mb-1">
+                Top Talent
+              </h2>
+              <p className="text-3xl font-extrabold text-slate-900">
+                Featured Verified Creators
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
+            <Link
+              to="/creators"
+              className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center space-x-1 mt-2 sm:mt-0"
+            >
+              <span>View all 20+ creators</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+            {featuredCreators.map((creator) => (
+              <div
+                key={creator.id}
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    setShowLoginModal(true);
+                  } else {
+                    navigate(`/creators/${creator.id}`);
+                  }
+                }}
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-200 cursor-pointer flex flex-col justify-between group"
+              >
+                <div>
+                  {/* 1st image as background banner */}
+                  <div className="h-36 sm:h-40 w-full relative bg-slate-100 overflow-hidden">
+                    <img
+                      src={creator.coverImage}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+
+                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full z-10 shadow-xs">
+                      {creator.category}
+                    </div>
+                  </div>
+
+                  {/* Avatar & Info with Avatar in FRONT */}
+                  <div className="px-5 pb-5 pt-0 flex-1 flex flex-col relative z-20">
+                    <div className="-mt-12 sm:-mt-14 mb-3.5 flex items-end justify-between relative z-30">
+                      <div className="relative">
+                        <img
+                          src={creator.avatar}
+                          alt={creator.name}
+                          className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-xl bg-white relative z-30"
+                        />
+                        {creator.verified && (
+                          <div className="absolute bottom-0 right-0 bg-indigo-600 text-white p-0.5 rounded-full ring-2 ring-white z-40" title="Verified Creator">
+                            <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center space-x-1 bg-amber-50/90 backdrop-blur-xs text-amber-800 text-xs font-bold px-2.5 py-1 rounded-xl border border-amber-200/80 shadow-xs relative z-30">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span>{creator.rating.toFixed(1)}</span>
+                        <span className="text-slate-500 text-[10px]">({creator.reviewsCount})</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5">
+                      <h3 className="font-bold text-slate-900 text-base truncate group-hover:text-indigo-600 transition">
+                        {creator.name}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2">{creator.handle}</p>
+                    <p className="text-xs text-slate-600 line-clamp-2 mb-4 leading-relaxed">
+                      {creator.bio}
+                    </p>
+
+                    {/* Social Metrics */}
+                    <div className="grid grid-cols-2 gap-2 py-2.5 px-3 bg-slate-50 rounded-xl mb-4 border border-slate-100 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block uppercase font-semibold">Audience</span>
+                        <span className="font-bold text-slate-800">
+                          {formatCompactNumber(creator.socialAccounts[0]?.followersCount || 10000)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block uppercase font-semibold">Engagement</span>
+                        <span className="font-bold text-emerald-600">
+                          {creator.socialAccounts[0]?.engagementRate || 5.2}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Bottom CTA */}
+                <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">
+                      {isLoggedIn ? 'Starting from' : 'Indicative rate'}
+                    </span>
+                    <span className="font-extrabold text-indigo-700 text-sm">
+                      {formatCurrency(creator.minPrice)}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl transition shadow-xs hover:shadow-indigo-200">
+                    {isLoggedIn ? 'View Media Kit →' : 'Log In to View 🔒'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 4. FEATURED OPEN CAMPAIGNS */}
       <section className="py-16 bg-slate-100/60 border-t border-slate-200">

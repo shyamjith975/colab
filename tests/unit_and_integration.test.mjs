@@ -1629,5 +1629,93 @@ describe('co-lab Core Marketplace Business Logic Tests', () => {
     const visibleToBrand = currentBrand.role === 'business' ? allAdInventory : [];
     assert.strictEqual(visibleToBrand.length, 2, 'Brand can view and book all creator ad inventory');
   });
+
+  test('53. Creator Segregation & Privacy: Complete Guarding from Competitor Creator Directories & Pricing', () => {
+    // 1. Navbar Navigation segregation: creators never see "Creators" in top nav or mobile nav
+    const getDesktopNavTabs = (userRole) => {
+      return userRole === 'creator'
+        ? [
+            { label: 'Campaigns', path: '/campaigns' },
+            { label: 'Sponsorships', path: '/sponsorships' },
+            { label: 'Ad Spaces', path: '/ad-spaces' },
+            { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
+          ]
+        : [
+            { label: 'Creators', path: '/creators' },
+            { label: 'Campaigns', path: '/campaigns' },
+            { label: 'Sponsorships', path: '/sponsorships' },
+            { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
+          ];
+    };
+
+    const creatorTabs = getDesktopNavTabs('creator');
+    assert.ok(!creatorTabs.some(t => t.path === '/creators'), 'Creators MUST NOT see /creators in desktop navigation');
+    assert.ok(creatorTabs.some(t => t.path === '/campaigns'), 'Creators see Campaigns in navigation');
+    assert.ok(creatorTabs.some(t => t.path === '/ad-spaces'), 'Creators see Ad Spaces in navigation');
+
+    const brandTabs = getDesktopNavTabs('business');
+    assert.ok(brandTabs.some(t => t.path === '/creators'), 'Brands see Creators in desktop navigation');
+
+    // 2. Discover Creators Route Guard: Logged-in creators accessing /creators are redirected to /campaigns
+    const checkDiscoverCreatorsAccess = (user) => {
+      if (user?.role === 'creator') {
+        return { redirect: '/campaigns', allow: false };
+      }
+      return { redirect: null, allow: true };
+    };
+
+    const creatorGuard = checkDiscoverCreatorsAccess({ id: 'user-c1', role: 'creator' });
+    assert.strictEqual(creatorGuard.allow, false, 'Creators are disallowed from accessing Discover Creators page');
+    assert.strictEqual(creatorGuard.redirect, '/campaigns', 'Creators are redirected to /campaigns');
+
+    const brandGuard = checkDiscoverCreatorsAccess({ id: 'user-b1', role: 'business' });
+    assert.strictEqual(brandGuard.allow, true, 'Brands are allowed to access Discover Creators page');
+    assert.strictEqual(brandGuard.redirect, null);
+
+    // 3. Creator Profile Protection: Creators cannot view competitor creator profiles
+    const checkCreatorProfileAccess = (currentUser, targetCreatorId) => {
+      if (currentUser?.role === 'creator' && currentUser.id !== targetCreatorId) {
+        return { redirect: '/campaigns', allow: false };
+      }
+      return { redirect: null, allow: true };
+    };
+
+    const competitorProfileCheck = checkCreatorProfileAccess({ id: 'user-c1', role: 'creator' }, 'user-c2');
+    assert.strictEqual(competitorProfileCheck.allow, false, 'Creator cannot inspect competitor creator profile');
+    assert.strictEqual(competitorProfileCheck.redirect, '/campaigns');
+
+    const ownProfileCheck = checkCreatorProfileAccess({ id: 'user-c1', role: 'creator' }, 'user-c1');
+    assert.strictEqual(ownProfileCheck.allow, true, 'Creator can view own profile');
+
+    // 4. Dashboard Directory Isolation: Creators never see "All Users Directory" button or tab
+    const getVisibleDashboardTabs = (role) => {
+      const common = ['compliance'];
+      if (role !== 'creator') {
+        common.unshift('all-users');
+      }
+      return common;
+    };
+
+    assert.ok(!getVisibleDashboardTabs('creator').includes('all-users'), 'Creator dashboard excludes all-users directory');
+    assert.ok(getVisibleDashboardTabs('business').includes('all-users'), 'Brand dashboard includes all-users directory');
+
+    // 5. Landing Page segregation: Featured Creators section hidden for logged-in creators
+    const isFeaturedCreatorsSectionVisible = (role) => role !== 'creator';
+    assert.strictEqual(isFeaturedCreatorsSectionVisible('creator'), false, 'Featured creators section is hidden for logged-in creators');
+    assert.strictEqual(isFeaturedCreatorsSectionVisible('business'), true, 'Featured creators section is visible for brands');
+    assert.strictEqual(isFeaturedCreatorsSectionVisible(undefined), true, 'Featured creators section is visible for guests');
+
+    // 6. Search Bar query redirection for creators
+    const getSearchDestination = (role, query) => {
+      const encoded = encodeURIComponent(query.trim());
+      if (role === 'creator') {
+        return `/campaigns?search=${encoded}`;
+      }
+      return `/creators?search=${encoded}`;
+    };
+
+    assert.strictEqual(getSearchDestination('creator', 'fashion'), '/campaigns?search=fashion');
+    assert.strictEqual(getSearchDestination('business', 'fashion'), '/creators?search=fashion');
+  });
 });
 

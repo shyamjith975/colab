@@ -259,6 +259,13 @@ export const DashboardPage: React.FC = () => {
     }
   }, [currentUser?.role]);
 
+  // Ensure creators can never be on the all-users directory tab
+  useEffect(() => {
+    if (currentUser?.role === 'creator' && activeTab === 'all-users') {
+      setActiveTab('deals');
+    }
+  }, [currentUser?.role, activeTab]);
+
   // Sponsor Requirement RFP Form State
   const [rfpForm, setRfpForm] = useState({
     title: '',
@@ -687,13 +694,15 @@ export const DashboardPage: React.FC = () => {
                 <span className="text-[10px] opacity-75 capitalize">({u.role})</span>
               </button>
             ))}
-            <button
-              onClick={() => setActiveTab('all-users')}
-              className="ml-auto px-2.5 py-1 bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 hover:text-white rounded-lg text-xs font-bold transition flex items-center space-x-1"
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>All Users Directory ({creators.length + businesses.length})</span>
-            </button>
+            {role !== 'creator' && (
+              <button
+                onClick={() => setActiveTab('all-users')}
+                className="ml-auto px-2.5 py-1 bg-indigo-500/30 hover:bg-indigo-500/50 text-indigo-200 hover:text-white rounded-lg text-xs font-bold transition flex items-center space-x-1"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>All Users Directory ({creators.length + businesses.length})</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1436,18 +1445,20 @@ export const DashboardPage: React.FC = () => {
             </>
           )}
 
-          {/* COMMON TAB FOR ALL ROLES: ALL USERS FINANCIAL & PERFORMANCE DIRECTORY */}
-          <button
-            onClick={() => setActiveTab('all-users')}
-            className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
-              activeTab === 'all-users'
-                ? 'border-indigo-600 text-indigo-700 font-black bg-indigo-50/70 rounded-t-xl shadow-2xs'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
-            <span>👥 All Users Performance & Earnings ({creators.length + businesses.length})</span>
-          </button>
+          {/* COMMON TAB FOR BRANDS, SPONSORS, ADMINS (HIDDEN FOR CREATORS): ALL USERS FINANCIAL & PERFORMANCE DIRECTORY */}
+          {role !== 'creator' && (
+            <button
+              onClick={() => setActiveTab('all-users')}
+              className={`pb-3 px-3 sm:px-4 border-b-2 transition whitespace-nowrap flex items-center space-x-1.5 ${
+                activeTab === 'all-users'
+                  ? 'border-indigo-600 text-indigo-700 font-black bg-indigo-50/70 rounded-t-xl shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-600" />
+              <span>👥 All Users Performance & Earnings ({creators.length + businesses.length})</span>
+            </button>
+          )}
 
           {/* COMMON TAB FOR ALL ROLES: TRUST & REGULATORY COMPLIANCE CENTER */}
           <button
@@ -1463,8 +1474,8 @@ export const DashboardPage: React.FC = () => {
           </button>
         </div>
 
-        {/* ALL USERS PERFORMANCE & DIRECTORY TAB */}
-        {activeTab === 'all-users' && (
+        {/* ALL USERS PERFORMANCE & DIRECTORY TAB (NOT ACCESSIBLE TO CREATORS) */}
+        {role !== 'creator' && activeTab === 'all-users' && (
           <div className="space-y-6">
             {/* Header & Global Financial Analytics Banner */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-lg border border-indigo-500/20">

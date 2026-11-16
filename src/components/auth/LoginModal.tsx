@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X,
   Lock,
@@ -17,6 +18,7 @@ import { UserRole } from '../../types';
 
 export const LoginModal: React.FC = () => {
   const { showLoginModal, setShowLoginModal, loginWithPassword, signupWithPassword } = useApp();
+  const navigate = useNavigate();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -50,7 +52,10 @@ export const LoginModal: React.FC = () => {
       setErrorMessage(result.error || 'Invalid credentials. Please verify your email and password.');
     } else {
       setSuccessMessage('Logged in successfully!');
-      setTimeout(() => setShowLoginModal(false), 500);
+      setTimeout(() => {
+        setShowLoginModal(false);
+        navigate('/dashboard');
+      }, 500);
     }
   };
 
@@ -83,7 +88,10 @@ export const LoginModal: React.FC = () => {
       setErrorMessage(result.error || 'Failed to create account.');
     } else {
       setSuccessMessage('Account created and logged in successfully!');
-      setTimeout(() => setShowLoginModal(false), 600);
+      setTimeout(() => {
+        setShowLoginModal(false);
+        navigate('/dashboard');
+      }, 600);
     }
   };
 

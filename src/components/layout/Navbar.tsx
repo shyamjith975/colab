@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Search,
   MessageSquare,
@@ -39,6 +39,7 @@ export const Navbar: React.FC = () => {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [showDbExplorer, setShowDbExplorer] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const roleDropdownRef = useRef<HTMLDivElement>(null);
@@ -91,12 +92,20 @@ export const Navbar: React.FC = () => {
   }
 
   // Universal Desktop Navigation Tabs - Core high-priority destinations
-  const desktopNavTabs: NavItem[] = [
-    { label: 'Creators', path: '/creators' },
-    { label: 'Campaigns', path: '/campaigns' },
-    { label: 'Sponsorships', path: '/sponsorships' },
-    { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
-  ];
+  // Creators must NEVER see other creators; only brands/sponsors see creator directory
+  const desktopNavTabs: NavItem[] = currentUser?.role === 'creator'
+    ? [
+        { label: 'Campaigns', path: '/campaigns' },
+        { label: 'Sponsorships', path: '/sponsorships' },
+        { label: 'Ad Spaces', path: '/ad-spaces' },
+        { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
+      ]
+    : [
+        { label: 'Creators', path: '/creators' },
+        { label: 'Campaigns', path: '/campaigns' },
+        { label: 'Sponsorships', path: '/sponsorships' },
+        { label: 'AI Tools', path: '/ai-tools', badge: 'AI' }
+      ];
 
   // Specialized Marketplaces available in "More Markets ▾" dropdown
   const moreMarketplaceItems = [
@@ -111,9 +120,9 @@ export const Navbar: React.FC = () => {
 
   const isMoreActive = moreMarketplaceItems.some(item => location.pathname === item.path);
 
-  // Full options specifically for mobile view
+  // Full options specifically for mobile view (hiding Discover Creators for creators)
   const mobileNavLinks: NavItem[] = [
-    { label: 'Discover Creators', path: '/creators', icon: '🎨' },
+    ...(currentUser?.role === 'creator' ? [] : [{ label: 'Discover Creators', path: '/creators', icon: '🎨' }]),
     { label: 'Brand Campaigns', path: '/campaigns', icon: '📢' },
     { label: 'Local Ads Network', path: '/local-ads', icon: '📍', badge: 'City' },
     { label: 'Creator Collectives', path: '/collectives', icon: '👥', badge: 'Bundle' },
@@ -338,9 +347,18 @@ export const Navbar: React.FC = () => {
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={currentUser?.role === 'creator' ? "Search deals..." : "Search..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    if (currentUser?.role === 'creator') {
+                      navigate(`/campaigns?search=${encodeURIComponent(searchQuery.trim())}`);
+                    } else {
+                      navigate(`/creators?search=${encodeURIComponent(searchQuery.trim())}`);
+                    }
+                  }
+                }}
                 className="w-full pl-7 pr-2.5 py-1.5 bg-slate-100 hover:bg-slate-50 focus:bg-white text-xs rounded-full border border-transparent focus:border-indigo-500 focus:outline-none transition shadow-2xs"
               />
             </div>
@@ -580,9 +598,19 @@ export const Navbar: React.FC = () => {
           <div className="pt-2 pb-1">
             <input
               type="text"
-              placeholder="Search creators, campaigns, sponsorships..."
+              placeholder={currentUser?.role === 'creator' ? "Search brand deals, sponsorships..." : "Search creators, campaigns, sponsorships..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  setMobileMenuOpen(false);
+                  if (currentUser?.role === 'creator') {
+                    navigate(`/campaigns?search=${encodeURIComponent(searchQuery.trim())}`);
+                  } else {
+                    navigate(`/creators?search=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }
+              }}
               className="w-full pl-3 pr-3 py-2 bg-slate-100 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
             />
           </div>
